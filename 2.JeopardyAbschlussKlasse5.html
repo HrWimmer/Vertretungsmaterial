@@ -1,0 +1,1037 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mathe Jeopardy – 5. Klasse Gymnasium Bayern (Jahresrückblick)</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Fredoka', 'sans-serif'],
+                    },
+                    colors: {
+                        jeopardy: {
+                            blue: '#060ce9',
+                            darkblue: '#02025e',
+                            gold: '#ffcc00',
+                            accent: '#3366ff',
+                            card: '#111827'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #02023a 0%, #0a0b2e 50%, #00001a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            user-select: none;
+        }
+        .text-shadow-gold {
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.6), 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        .card-flip {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card-flip:hover:not(.disabled) {
+            transform: scale(1.03);
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            height: 10px;
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0b2e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ffcc00;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen font-sans p-2 md:p-4">
+    <a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;background:rgba(15,23,42,0.85);color:#fff;padding:8px 14px;border-radius:999px;font-family:sans-serif;font-size:14px;text-decoration:none;border:1px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);">← Menü</a>
+
+    <!-- Header Controls & Title -->
+    <header class="flex flex-wrap justify-between items-center bg-black/40 backdrop-blur border border-yellow-500/30 rounded-2xl p-3 md:p-4 mb-4 gap-3 shadow-xl">
+        <div class="flex items-center space-x-3">
+            <span class="text-3xl md:text-4xl">📐</span>
+            <div>
+                <h1 class="font-display text-2xl md:text-3xl font-bold text-yellow-400 tracking-wide text-shadow-gold">
+                    MATHE JEOPARDY 5. KLASSE
+                </h1>
+                <p class="text-xs md:text-sm text-blue-200 font-medium">
+                    Jahresrückblick • LehrplanPLUS Gymnasium Bayern
+                </p>
+            </div>
+        </div>
+
+        <!-- Action Toolbar -->
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="toggleAudio()" id="audioBtn" class="flex items-center space-x-1.5 px-3 py-2 bg-blue-900/60 hover:bg-blue-800 border border-blue-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span id="audioIcon">🔊</span> <span id="audioText">Ton An</span>
+            </button>
+            <button onclick="openTeacherSheet()" class="flex items-center space-x-1.5 px-3 py-2 bg-purple-900/60 hover:bg-purple-800 border border-purple-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span>📑</span> <span>Spickzettel</span>
+            </button>
+            <button onclick="openTeamModal()" class="flex items-center space-x-1.5 px-3 py-2 bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span>⚙️</span> <span>Teams</span>
+            </button>
+            <button onclick="confirmReset()" class="flex items-center space-x-1.5 px-3 py-2 bg-red-900/60 hover:bg-red-800 border border-red-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span>🔄</span> <span>Neu</span>
+            </button>
+            <button onclick="toggleFullscreen()" class="flex items-center space-x-1.5 px-3 py-2 bg-yellow-600/60 hover:bg-yellow-500 border border-yellow-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span>⛶</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Team Scoreboard Section -->
+    <section id="scoreboard" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3 mb-4">
+        <!-- Team cards generated dynamically -->
+    </section>
+
+    <!-- Main Game Matrix -->
+    <main class="flex-grow flex flex-col justify-center overflow-x-auto py-2">
+        <div id="gameBoard" class="grid gap-1.5 md:gap-3 w-full h-full min-w-[1200px] lg:min-w-0">
+            <!-- Categories and Cards will be generated by JS -->
+        </div>
+    </main>
+
+    <!-- Footer Status -->
+    <footer class="mt-4 text-center text-xs text-blue-300/70 py-2">
+        Bayerischer LehrplanPLUS • Gymnasium Jgst. 5 (Mathematik Jahresrückblick)
+    </footer>
+
+    <!-- Modal: Question Display -->
+    <div id="questionModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-4 md:p-8">
+        <div class="bg-gradient-to-b from-blue-950 to-slate-900 border-2 border-yellow-400/60 rounded-3xl max-w-4xl w-full p-6 md:p-8 shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto">
+            
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-4 border-b border-blue-800/60 pb-3">
+                <div class="flex items-center space-x-3">
+                    <span id="modalCategory" class="px-3 py-1 bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 rounded-full text-xs md:text-sm font-bold uppercase tracking-wider">
+                        Kategorie
+                    </span>
+                    <span id="modalPoints" class="px-3 py-1 bg-blue-600/30 text-blue-200 border border-blue-400/40 rounded-full text-xs md:text-sm font-extrabold">
+                        300 Punkte
+                    </span>
+                    <span id="dailyDoubleBadge" class="hidden px-3 py-1 bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold text-xs md:text-sm rounded-full animate-pulse shadow-lg">
+                        🔥 JOKER-FRAGE (Doppelte Punkte!)
+                    </span>
+                </div>
+                <button onclick="closeQuestionModal()" class="text-gray-400 hover:text-white text-2xl font-bold px-2 py-1">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Timer Display Bar -->
+            <div id="timerContainer" class="w-full bg-slate-800 rounded-full h-2.5 mb-6 overflow-hidden hidden">
+                <div id="timerBar" class="bg-gradient-to-r from-emerald-400 via-yellow-400 to-red-500 h-2.5 rounded-full transition-all duration-1000 ease-linear w-full"></div>
+            </div>
+
+            <!-- Question Task Container -->
+            <div class="my-auto py-4 text-center">
+                <div id="questionText" class="text-xl md:text-3xl font-semibold text-white leading-relaxed md:leading-loose">
+                    Fragetext lädt...
+                </div>
+
+                <!-- Solution Box (Initially hidden) -->
+                <div id="solutionBox" class="hidden mt-6 p-4 md:p-6 bg-emerald-950/60 border border-emerald-500/50 rounded-2xl text-left transition-all">
+                    <div class="text-xs uppercase font-bold text-emerald-400 mb-1 tracking-widest">
+                        ✓ Richtige Lösung & Erklärung:
+                    </div>
+                    <div id="solutionText" class="text-lg md:text-2xl font-bold text-emerald-100 leading-normal">
+                        Lösungstext...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="mt-6 pt-4 border-t border-blue-800/60 flex flex-col gap-4">
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button id="showSolutionBtn" onclick="revealSolution()" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-extrabold rounded-xl text-base shadow-lg transition transform hover:scale-105">
+                        💡 Lösung anzeigen
+                    </button>
+                    <button id="startTimerBtn" onclick="startTimer()" class="px-4 py-3 bg-blue-800 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center space-x-1">
+                        ⏱️ <span>30s Timer</span>
+                    </button>
+                </div>
+
+                <!-- Award Points to Team Section -->
+                <div id="awardSection" class="hidden flex flex-col items-center gap-2 pt-2 border-t border-blue-900/50">
+                    <span class="text-xs text-blue-200 font-semibold uppercase tracking-wider">
+                        Punkte vergeben an:
+                    </span>
+                    <div id="awardTeamButtons" class="flex flex-wrap justify-center gap-2">
+                        <!-- Dynamic team buttons inserted here -->
+                    </div>
+                    <button onclick="closeQuestionModal()" class="mt-2 text-xs text-gray-400 hover:text-gray-200 underline">
+                        Keine Punkte vergeben / Schließen
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal: Teams Config -->
+    <div id="teamModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-blue-500/40 rounded-3xl max-w-md w-full p-6 shadow-2xl">
+            <h2 class="font-display text-2xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                👥 Teams verwalten
+            </h2>
+            
+            <div class="space-y-4 mb-6">
+                <div id="teamInputs" class="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
+                    <!-- Dynamic Team Inputs -->
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-3 border-t border-slate-800">
+                <button onclick="addTeamInput()" class="px-3 py-2 bg-blue-900/80 hover:bg-blue-800 text-blue-200 rounded-xl text-xs font-bold transition">
+                    + Team hinzufügen
+                </button>
+                <div class="space-x-2">
+                    <button onclick="closeTeamModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-gray-300 rounded-xl text-sm font-semibold">
+                        Abbrechen
+                    </button>
+                    <button onclick="saveTeams()" class="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-sm shadow">
+                        Speichern
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Teacher Cheat-Sheet / Print View -->
+    <div id="teacherSheetModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 md:p-8">
+        <div class="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-5xl w-full p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                <h2 class="font-display text-2xl font-bold text-purple-300 flex items-center gap-2">
+                    📑 Lehrer-Spickzettel & Musterlösungen
+                </h2>
+                <button onclick="closeTeacherSheet()" class="text-gray-400 hover:text-white text-2xl font-bold px-2">✕</button>
+            </div>
+            
+            <div class="overflow-y-auto flex-grow pr-2 space-y-6" id="teacherSheetContent">
+                <!-- Dynamically filled with all Q&A -->
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 flex justify-end">
+                <button onclick="closeTeacherSheet()" class="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-sm">
+                    Schließen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Overlay Screen -->
+    <div id="victoryOverlay" class="fixed inset-0 bg-black/95 backdrop-blur-lg z-50 hidden flex flex-col items-center justify-center p-6 text-center">
+        <canvas id="fireworksCanvas" class="absolute inset-0 pointer-events-none"></canvas>
+        <div class="relative z-10 max-w-2xl bg-slate-900/80 border-2 border-yellow-400 p-8 rounded-3xl shadow-2xl">
+            <span class="text-6xl animate-bounce block mb-4">🏆</span>
+            <h2 class="font-display text-3xl md:text-5xl font-extrabold text-yellow-400 text-shadow-gold mb-2">
+                SPIEL BEENDET!
+            </h2>
+            <p class="text-blue-200 text-lg mb-6">Herzlichen Glückwunsch an das Gewinner-Team!</p>
+            
+            <div id="winnerText" class="text-2xl md:text-4xl font-extrabold text-emerald-400 mb-8">
+                Team Name - 0 Punkte
+            </div>
+
+            <div class="flex justify-center gap-4">
+                <button onclick="closeVictory()" class="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-extrabold rounded-2xl text-base shadow-xl">
+                    Ergebnisse ansehen
+                </button>
+                <button onclick="confirmReset()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold rounded-2xl text-base shadow-xl">
+                    Neues Spiel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Reset Confirmation -->
+    <div id="resetModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-red-500/40 rounded-3xl max-w-md w-full p-6 shadow-2xl text-center">
+            <span class="text-4xl block mb-2">🔄</span>
+            <h2 class="font-display text-2xl font-bold text-yellow-400 mb-2">
+                Neues Spiel starten?
+            </h2>
+            <p class="text-blue-200 text-sm mb-6">
+                Möchtest du das Jeopardy-Spiel wirklich zurücksetzen? Alle Punkte und aufgedeckten Karten gehen verloren.
+            </p>
+
+            <div class="flex justify-center gap-3">
+                <button onclick="closeResetModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-gray-300 rounded-xl text-sm font-semibold">
+                    Abbrechen
+                </button>
+                <button onclick="executeReset()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm shadow">
+                    Ja, Neustart
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* Web Audio API Sound Generator (No external files required) */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) this.ctx = new AudioContext();
+                }
+            }
+
+            playTone(freq, type = 'sine', duration = 0.2, startDelay = 0) {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                setTimeout(() => {
+                    try {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = type;
+                        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start();
+                        osc.stop(this.ctx.currentTime + duration);
+                    } catch(e){}
+                }, startDelay * 1000);
+            }
+
+            playCorrect() {
+                this.playTone(523.25, 'triangle', 0.15, 0);   // C5
+                this.playTone(659.25, 'triangle', 0.15, 0.12); // E5
+                this.playTone(783.99, 'triangle', 0.15, 0.24); // G5
+                this.playTone(1046.50, 'triangle', 0.3, 0.36); // C6
+            }
+
+            playWrong() {
+                this.playTone(220, 'sawtooth', 0.2, 0);
+                this.playTone(185, 'sawtooth', 0.35, 0.15);
+            }
+
+            playClick() {
+                this.playTone(800, 'sine', 0.05, 0);
+            }
+
+            playTick() {
+                this.playTone(1000, 'sine', 0.03, 0);
+            }
+
+            playDailyDouble() {
+                this.playTone(440, 'square', 0.12, 0);
+                this.playTone(554.37, 'square', 0.12, 0.1);
+                this.playTone(659.25, 'square', 0.12, 0.2);
+                this.playTone(880, 'square', 0.4, 0.3);
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        function toggleAudio() {
+            sound.muted = !sound.muted;
+            document.getElementById('audioIcon').innerText = sound.muted ? '🔇' : '🔊';
+            document.getElementById('audioText').innerText = sound.muted ? 'Stumm' : 'Ton An';
+        }
+
+        /* Completely New Jeopardy Game Data strictly aligned with Bavarian LehrplanPLUS Gymnasium Mathe 5 */
+        const jeopardyData = [
+            {
+                category: "🏛️ Große Zahlen & Stellenwerte",
+                description: "Stellenwerttafel, Zehnerpotenzen, Runden & Zahlengerade",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Schreibe die folgende Zahl in Ziffern:<br><br><span class='text-2xl font-bold text-yellow-300'>Fünf Millionen vierzigtausendundacht</span>",
+                        a: "<b>5.040.008</b><br><span class='text-sm text-emerald-300'>Erklärung: 5 Millionen, 0 Hunderttausender, 4 Zehntausender, 0 Tausender, 0 Hunderter, 0 Zehner, 8 Einer.</span>"
+                    },
+                    {
+                        points: 200,
+                        q: "Welche Zahl verbirgt sich hinter folgender Zehnerpotenz-Zerlegung?<br><br><span class='text-yellow-300 font-mono text-2xl'>(5 · 10<sup>5</sup>) + (3 · 10<sup>3</sup>) + (8 · 10<sup>0</sup>)</span>",
+                        a: "<b>503.008</b><br><span class='text-sm text-emerald-300'>Rechnung: 500.000 + 3.000 + 8 = 503.008.</span>"
+                    },
+                    {
+                        points: 300,
+                        q: "Runde die Einwohnerzahl einer Großstadt von <b class='text-yellow-300'>1.784.912</b> auf <b>Hunderttausender</b>.",
+                        a: "<b>1.800.000</b><br><span class='text-sm text-emerald-300'>Erklärung: An der Zehntausenderstelle steht eine 8, also wird aufgerundet.</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Nenne den <b>Vorgänger</b> und den <b>Nachfolger</b> der ganzen Zahl <b class='text-yellow-300'>-99</b> auf der Zahlengeraden.",
+                        a: "<b>Vorgänger: -100</b><br><b>Nachfolger: -98</b><br><span class='text-sm text-emerald-300'>Erklärung: Auf der Zahlengeraden liegt -100 links von -99 und -98 rechts davon.</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Erkläre das Prinzip unseres <b>Dezimalsystems</b>: Welchen Wert hat die Ziffer <b>7</b> in der Zahl <span class='text-yellow-300 font-mono text-2xl'>73.470</span> jeweils an ihren zwei Positionen?",
+                        a: "Erste 7: <b>70.000</b> (Zehntausenderstelle)<br>Zweite 7: <b>70</b> (Zehnerstelle)<br><span class='text-sm text-emerald-300'>Grund: In unserem Dezimalsystem (Stellenwertsystem) hängt der Wert einer Ziffer von ihrer Stelle ab.</span>"
+                    }
+                ]
+            },
+            {
+                category: "➕ Minus & Plus im Griff",
+                description: "Ganze Zahlen, Vorzeichen, Thermometer & Betrag",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Gib die <b>Gegenzahl</b> und den <b>Betrag</b> der Zahl <b class='text-yellow-300'>-24</b> an.",
+                        a: "<b>Gegenzahl: +24</b> (oder 24)<br><b>Betrag: |-24| = 24</b>",
+                    },
+                    {
+                        points: 200,
+                        q: "Um 6:00 Uhr morgens zeigt das Thermometer <span class='text-yellow-300'>-9 °C</span>, am Nachmittag misst man <span class='text-yellow-300'>+14 °C</span>. Um wie viel Grad ist die Temperatur gestiegen?",
+                        a: "<b>23 °C</b><br><span class='text-sm text-emerald-300'>Rechnung: Differenz von -9 bis +14: 14 - (-9) = 14 + 9 = 23 °C.</span>"
+                    },
+                    {
+                        points: 300,
+                        q: "Berechne den Kontostand:<br>Start mit <b>150 € Guthaben</b>. Es werden <b>40 € gutgeschrieben</b> (- (-40 €)) und danach <b>60 € abgebucht</b>. Wie viel Euro sind auf dem Konto?",
+                        a: "<b>130 €</b><br><span class='text-sm text-emerald-300'>Rechnung: 150 + 40 - 60 = 130 €.</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Berechne den Wert des Terms unter Beachtung der Klammer- und Vorzeichenregeln:<br><br><span class='text-2xl font-mono text-yellow-300'>(-35) - (+15) + (-20) - (-10)</span>",
+                        a: "<b>-60</b><br><span class='text-sm text-emerald-300'>Schritte: -35 - 15 - 20 + 10 = -50 - 20 + 10 = -70 + 10 = -60.</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Widerlege die Aussage <i>'Der Betrag von a + b ist immer gleich |a| + |b|'</i> mithilfe eines passenden Gegenbeispiels mit zwei ganzen Zahlen.",
+                        a: "Beispiel: Wählen wir <b>a = 5</b> und <b>b = -3</b>.<br>• Links: |5 + (-3)| = |2| = <b>2</b><br>• Rechts: |5| + |-3| = 5 + 3 = <b>8</b><br>Da 2 ≠ 8, ist die Aussage widerlegt!",
+                    }
+                ]
+            },
+            {
+                category: "✖️ Mal, Geteilt & Teiler",
+                description: "Potenzen, Teilbarkeit, ggT & Primfaktorzerlegung",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Berechne die Werte dieser beiden Potenzen:<br><br><span class='text-2xl font-mono text-yellow-300'>3<sup>4</sup></span>  und  <span class='text-2xl font-mono text-yellow-300'>2<sup>6</sup></span>",
+                        a: "<b>3<sup>4</sup> = 81</b> (3·3·3·3) <br><b>2<sup>6</sup> = 64</b> (2·2·2·2·2·2)",
+                    },
+                    {
+                        points: 200,
+                        q: "Prüfe mithilfe der Quersumme, ob die Zahl <b class='text-yellow-300'>5.319</b> durch 3 und durch 9 teilbar ist.",
+                        a: "<b>Durch 3 UND durch 9 teilbar!</b><br><span class='text-sm text-emerald-300'>Erklärung: Quersumme Q = 5 + 3 + 1 + 9 = 18. Da 18 sowohl durch 3 als auch durch 9 teilbar ist, gilt dies auch für 5.319.</span>"
+                    },
+                    {
+                        points: 300,
+                        q: "Löse die Umkehraufgabe einer Division mit Rest:<br>Welche Zahl x wurde durch 12 geteilt, wenn das Ergebnis <b>15 mit Rest 4</b> lautet?",
+                        a: "<b>x = 184</b><br><span class='text-sm text-emerald-300'>Rechnung: Umkehraufgabe x = 12 · 15 + 4 = 180 + 4 = 184.</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Bestimme den <b>größten gemeinsamen Teiler (ggT)</b> der Zahlen <b>36</b> und <b>48</b>.",
+                        a: "<b>ggT(36, 48) = 12</b><br><span class='text-sm text-emerald-300'>Teiler von 36: {1,2,3,4,6,9,12,18,36}<br>Teiler von 48: {1,2,3,4,6,8,12,16,24,48}. Der größte gemeinsame Teiler ist 12.</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Zerlege die Zahl <b class='text-yellow-300'>120</b> vollständig in ein Produkt aus <b>Primfaktoren</b> (Primfaktorzerlegung).",
+                        a: "<b>2 · 2 · 2 · 3 · 5</b> (oder 2<sup>3</sup> · 3 · 5)<br><span class='text-sm text-emerald-300'>Probe: 8 · 3 · 5 = 24 · 5 = 120. Alle Faktoren sind Primzahlen.</span>"
+                    }
+                ]
+            },
+            {
+                category: "📐 Geometrie & Koordinaten",
+                description: "Koordinatensystem, Abstand, Vierecke, Kreis & Symmetrie",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Wie lauten die Koordinaten des <b>Ursprungs O</b> im Koordinatensystem und wie nennt man die beiden Achsen-Werte?",
+                        a: "<b>Ursprung O(0 | 0)</b><br>1. Zahl = <b>Rechtswert</b> (x-Achse)<br>2. Zahl = <b>Hochwert</b> (y-Achse)",
+                    },
+                    {
+                        points: 200,
+                        q: "Was versteht man unter dem mathematischen <b>Abstand</b> eines Punktes P von einer Geraden g?",
+                        a: "Die Länge der <b>senkrechten Verbindungsstrecke</b> (Lotstrecke) vom Punkt P zur Geraden g.",
+                    },
+                    {
+                        points: 300,
+                        q: "Nenne die entscheidenden Eigenschaften einer <b>Raute (Rhombus)</b> im Vergleich zu einem gewöhnlichen Rechteck.",
+                        a: "Bei einer Raute sind <b>alle 4 Seiten gleich lang</b> (Rechteck muss 4 rechte Winkel haben, seine Seiten müssen aber nicht alle gleich lang sein).",
+                    },
+                    {
+                        points: 400,
+                        q: "Welcher Zusammenhang besteht zwischen dem <b>Radius r</b> und dem <b>Durchmesser d</b> eines Kreises und was unterscheidet die Kreislinie von der Kreisfläche?",
+                        a: "<b>d = 2 · r</b> (Durchmesser ist doppelt so lang wie der Radius).<br>Die <i>Kreislinie</i> ist nur der Rand, die <i>Kreisfläche</i> beinhaltet auch das Innere.",
+                    },
+                    {
+                        points: 500,
+                        q: "Wie viele <b>Symmetrieachsen</b> besitzen jeweils:<br>a) ein Quadrat<br>b) ein (nicht-quadratisches) Rechteck<br>c) ein gleichseitiges Dreieck?",
+                        a: "a) Quadrat: <b>4 Achsen</b><br>b) Rechteck: <b>2 Achsen</b><br>c) Gleichseitiges Dreieck: <b>3 Achsen</b>",
+                    }
+                ]
+            },
+            {
+                category: "🕒 Größen & Maßstab",
+                description: "Geld, Massen, Zeitspannen, Maßstab & Dreisatz",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Schreibe in Kommaschreibweise:<br>a) <span class='text-yellow-300 font-mono'>408 ct = _____ €</span><br>b) <span class='text-yellow-300 font-mono'>3 m 7 cm = _____ m</span>",
+                        a: "a) <b>4,08 €</b><br>b) <b>3,07 m</b>",
+                    },
+                    {
+                        points: 200,
+                        q: "Wandle in die gesuchte Einheit um:<br>a) <span class='text-yellow-300 font-mono'>3 t 85 kg = _____ kg</span><br>b) <span class='text-yellow-300 font-mono'>2500 g = _____ kg</span>",
+                        a: "a) <b>3085 kg</b><br>b) <b>2,5 kg</b> (oder 2 kg 500 g)",
+                    },
+                    {
+                        points: 300,
+                        q: "Ein Zug fährt um <b>09:45 Uhr</b> ab und erreicht den Zielbahnhof um <b>12:18 Uhr</b>. Wie lange dauert die Zugfahrt in Stunden und Minuten?",
+                        a: "<b>2 h 33 min</b> (oder 153 Minuten)<br><span class='text-sm text-emerald-300'>Rechnung: Von 09:45 bis 12:00 = 2 h 15 min. Bis 12:18 noch +18 min = 2 h 33 min.</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Auf einer Radkarte mit dem Maßstab <b>1 : 25.000</b> misst eine Strecke <b>8 cm</b>. Wie lang ist die Radtour in Wirklichkeit in Kilometern?",
+                        a: "<b>2 km</b><br><span class='text-sm text-emerald-300'>Rechnung: 8 cm · 25.000 = 200.000 cm = 2000 m = 2 km.</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Schlussrechnung (Dreisatz):<br>8 Arbeitshefte für die Klasse kosten zusammen 14,00 €. Wie viel Euro kosten <b>12 Hefte</b> derselben Art?",
+                        a: "<b>21,00 €</b><br><span class='text-sm text-emerald-300'>Rechnung: 1 Heft kostet 14,00 € : 8 = 1,75 €. <br>12 Hefte kosten 12 · 1,75 € = 21,00 €.</span>"
+                    }
+                ]
+            },
+            {
+                category: "🟩 Umfang, Fläche & Würfel",
+                description: "Umfang, Flächeneinheiten, Quader-Kanten & Oberflächen",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Ein Quadrat hat einen Flächeninhalt von <span class='text-yellow-300'>A = 36 cm²</span>. Berechne seinen <b>Umfang U</b>.",
+                        a: "<b>U = 24 cm</b><br><span class='text-sm text-emerald-300'>Rechnung: Seitenlänge a = 6 cm (6·6=36). Umfang U = 4 · 6 cm = 24 cm.</span>"
+                    },
+                    {
+                        points: 200,
+                        q: "Rechne in die gefragte Flächeneinheit um:<br>a) <span class='text-yellow-300 font-mono'>5 ha = _____ m²</span><br>b) <span class='text-yellow-300 font-mono'>400 a = _____ ha</span>",
+                        a: "a) <b>50.000 m²</b> (1 ha = 100 a = 10.000 m²)<br>b) <b>4 ha</b> (100 a = 1 ha)",
+                    },
+                    {
+                        points: 300,
+                        q: "Ein Quader hat die Kantenlängen <span class='text-yellow-300'>a = 6 cm</span>, <span class='text-yellow-300'>b = 4 cm</span> und <span class='text-yellow-300'>c = 3 cm</span>. Berechne die <b>Gesamtlänge aller 12 Kanten</b> des Quaders.",
+                        a: "<b>52 cm</b><br><span class='text-sm text-emerald-300'>Rechnung: Ein Quader hat je 4 Kanten jeder Länge: 4 · (6 + 4 + 3) = 4 · 13 cm = 52 cm.</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Berechne den <b>Oberflächeninhalt A<sub>O</sub></b> eines Quaders mit den Kantenlängen <span class='text-yellow-300'>a = 5 cm</span>, <span class='text-yellow-300'>b = 4 cm</span> und <span class='text-yellow-300'>c = 2 cm</span>.",
+                        a: "<b>76 cm²</b><br><span class='text-sm text-emerald-300'>Rechnung: A<sub>O</sub> = 2 · (a·b + b·c + a·c) = 2 · (20 + 8 + 10) = 2 · 38 cm² = 76 cm².</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Ein Rechteck mit den Seiten <span class='text-yellow-300'>16 cm</span> und <span class='text-yellow-300'>4 cm</span> hat den gleichen Flächeninhalt wie ein Quadrat. Vergleiche die beiden <b>Umfänge</b>!",
+                        a: "<b>Quadrat-Umfang = 32 cm</b> (ist um 8 cm kleiner als der <b>Rechteck-Umfang = 40 cm</b>).<br><span class='text-sm text-emerald-300'>Rechnung: Fläche A = 16·4 = 64 cm². Quadratseite a = 8 cm. U<sub>Rechteck</sub> = 2·(16+4)=40 cm. U<sub>Quadrat</sub> = 4·8=32 cm.</span>"
+                    }
+                ]
+            },
+            {
+                category: "🌳 Baumdiagramme & Statistik",
+                description: "Diagramme, Piktogramme, Zählprinzip & Kombinationen",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Bei einer Klassensprecherwahl lautet das Strichlisten-Ergebnis für Mia: <span class='text-yellow-300 text-2xl font-mono'>卌 卌 |||</span>. Wie viele Stimmen hat Mia bekommen?",
+                        a: "<b>13 Stimmen</b><br><span class='text-sm text-emerald-300'>Erklärung: 2 Fünferbündel (10) + 3 Einzelstriche = 13.</span>"
+                    },
+                    {
+                        points: 200,
+                        q: "In einem Piktogramm steht ein Symbol 🚴 für <b>4 Fahrräder</b>. Wie viele Symbole müssen gezeichnet werden, um <b>28 Fahrräder</b> darzustellen?",
+                        a: "<b>7 Symbole</b><br><span class='text-sm text-emerald-300'>Rechnung: 28 : 4 = 7.</span>"
+                    },
+                    {
+                        points: 300,
+                        q: "Mithilfe des <b>Zählprinzips</b>: Marie hat 3 verschiedene Hosen, 4 T-Shirts und 2 Paar Schuhe. Wie viele verschiedene Kleidungskombinationen kann sie zusammenstellen?",
+                        a: "<b>24 Kombinationen</b><br><span class='text-sm text-emerald-300'>Rechnung nach dem Zählprinzip: 3 · 4 · 2 = 24 Möglichkeiten.</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Ein dreistufiges Baumdiagramm zeigt 3 Münzwürfe (Kopf oder Zahl). Wie viele Pfade hat das Baumdiagramm insgesamt und bei wie vielen fällt <b>genau einmal Kopf</b>?",
+                        a: "Gesamt: <b>8 Pfade</b><br>Genau 1-mal Kopf: <b>3 Pfade</b><br><span class='text-sm text-emerald-300'>Pfade mit genau 1x Kopf: (K-Z-Z), (Z-K-Z), (Z-Z-K).</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Aus 4 Kindern (Anna, Ben, Clara, David) sollen <b>2 Kinder für den Tafeldienst</b> ausgewählt werden. Wie viele verschiedene Zweier-Teams gibt es insgesamt?",
+                        a: "<b>6 verschiedene Teams</b><br><span class='text-sm text-emerald-300'>Kombinationen ohne Reihenfolge: (A,B), (A,C), (A,D), (B,C), (B,D), (C,D) = 6 Teams.</span>"
+                    }
+                ]
+            },
+            {
+                category: "🧠 Logik & Denksport",
+                description: "Muster, Altersrätsel, Uhrenwinkel & Logikaufgaben",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Setze die Zahlenfolge logisch fort:<br><br><span class='text-3xl font-mono text-yellow-300'>3, 7, 15, 31, 63, ___</span>",
+                        a: "<b>127</b><br><span class='text-sm text-emerald-300'>Bildungsregel: Immer mal 2 plus 1 (oder verdoppeln und 1 addieren). 63 · 2 + 1 = 127.</span>"
+                    },
+                    {
+                        points: 200,
+                        q: "Paul ist 4 Jahre älter als seine Schwester Anna. Zusammen sind sie 22 Jahre alt. Wie alt sind die beiden Geschwister?",
+                        a: "<b>Paul ist 13 Jahre, Anna ist 9 Jahre alt.</b><br><span class='text-sm text-emerald-300'>Lösung: 22 - 4 = 18; 18 : 2 = 9 (Anna). 9 + 4 = 13 (Paul). Probe: 13 + 9 = 22.</span>"
+                    },
+                    {
+                        points: 300,
+                        q: "Welchen <b>Winkel</b> bilden der Stunden- und der Minutenzeiger einer Uhr genau um <b>15:30 Uhr</b>?",
+                        a: "<b>75°</b><br><span class='text-sm text-emerald-300'>Erklärung: Der Minutenzeiger steht auf der 6 (180°). Der Stundenzeiger steht genau in der Mitte zwischen 3 und 4 (105°). Differenz = 180° - 105° = 75°.</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Ein Würfel (3 cm Kantenlänge) aus 27 kleinen 1-cm-Würfeln wird außen blau angemalt. Wie viele der kleinen Würfel haben <b>gar keine (0) blaue Seite</b>?",
+                        a: "<b>Genau 1 Würfelchen</b><br><span class='text-sm text-emerald-300'>Erklärung: Es handelt sich um das einzelne Würfelchen ganz im Inneren im Zentrum des Quaders.</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Ein Bauer muss einen Wolf, eine Ziege und einen Kohlkopf mit einem Boot über einen Fluss bringen. Das Boot fasst nur ihn und 1 Gegenstand. Alleine gelassen frisst der Wolf die Ziege und die Ziege den Kohl. Wie gelingt die Überquerung?",
+                        a: "<b>Lösung in 4 Fahrten:</b><br>1. Bringt die Ziege hinüber.<br>2. Bringt den Wolf hinüber und nimmt die Ziege wieder mit zurück.<br>3. Bringt den Kohl hinüber.<br>4. Holt die Ziege ab.",
+                    }
+                ]
+            }
+        ];
+
+        /* State Variables */
+        let gameState = {
+            teams: [
+                { name: "Team Pythagoras", score: 0, color: "from-blue-600 to-indigo-700" },
+                { name: "Team Euler", score: 0, color: "from-emerald-600 to-teal-700" },
+                { name: "Team Gauss", score: 0, color: "from-amber-600 to-orange-700" },
+                { name: "Team Hypatia", score: 0, color: "from-rose-600 to-pink-700" }
+            ],
+            usedQuestions: new Set(),
+            currentQ: null,
+            dailyDoubleCoords: null,
+            timerInterval: null,
+            timeLeft: 30
+        };
+
+        /* Initialize Game on Load */
+        window.onload = function() {
+            setRandomDailyDouble();
+            renderScoreboard();
+            renderGameBoard();
+        };
+
+        function setRandomDailyDouble() {
+            const catIdx = Math.floor(Math.random() * jeopardyData.length);
+            const qIdx = Math.floor(Math.random() * 3) + 2; // 300, 400 or 500 pts
+            gameState.dailyDoubleCoords = `${catIdx}-${qIdx}`;
+        }
+
+        function renderGameBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            board.style.gridTemplateColumns = `repeat(${jeopardyData.length}, minmax(0, 1fr))`;
+
+            // Render Category Headers
+            jeopardyData.forEach((cat, cIdx) => {
+                const catHeader = document.createElement('div');
+                catHeader.className = "bg-gradient-to-b from-blue-900 to-blue-950 border-2 border-yellow-500/50 rounded-2xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-lg min-h-[75px]";
+                catHeader.innerHTML = `
+                    <div class="font-display font-extrabold text-xs md:text-sm text-yellow-400 tracking-wide leading-tight">${cat.category}</div>
+                    <div class="text-[10px] md:text-xs text-blue-200/80 mt-1 hidden sm:block">${cat.description}</div>
+                `;
+                board.appendChild(catHeader);
+            });
+
+            // Render 5 Rows of Questions (100, 200, 300, 400, 500)
+            for (let qIdx = 0; qIdx < 5; qIdx++) {
+                for (let cIdx = 0; cIdx < jeopardyData.length; cIdx++) {
+                    const qData = jeopardyData[cIdx].questions[qIdx];
+                    const qKey = `${cIdx}-${qIdx}`;
+                    const isUsed = gameState.usedQuestions.has(qKey);
+
+                    const card = document.createElement('button');
+                    card.className = `card-flip rounded-2xl border-2 flex items-center justify-center font-display font-extrabold text-xl md:text-3xl py-4 md:py-6 shadow-md transition-all ${
+                        isUsed 
+                        ? 'bg-slate-900/60 border-slate-800 text-slate-600 cursor-not-allowed disabled' 
+                        : 'bg-gradient-to-b from-blue-700 to-blue-900 border-yellow-400/70 text-yellow-400 hover:text-white cursor-pointer'
+                    }`;
+
+                    if (isUsed) {
+                        card.innerHTML = `<span class="text-slate-700 text-lg md:text-2xl">✓</span>`;
+                    } else {
+                        card.innerHTML = `<span class="text-shadow-gold">${qData.points}</span>`;
+                        card.onclick = () => openQuestion(cIdx, qIdx);
+                    }
+
+                    board.appendChild(card);
+                }
+            }
+        }
+
+        function renderScoreboard() {
+            const container = document.getElementById('scoreboard');
+            container.innerHTML = '';
+
+            gameState.teams.forEach((team, idx) => {
+                const teamCard = document.createElement('div');
+                teamCard.className = `bg-gradient-to-br ${team.color} border border-white/20 rounded-2xl p-3 shadow-lg flex flex-col justify-between relative overflow-hidden`;
+                teamCard.innerHTML = `
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-display font-bold text-sm md:text-base text-white truncate max-w-[120px]">${team.name}</span>
+                        <div class="flex gap-1">
+                            <button onclick="adjustScore(${idx}, -100)" class="w-6 h-6 bg-black/30 hover:bg-black/50 text-white rounded-full text-xs font-bold transition flex items-center justify-center">-</button>
+                            <button onclick="adjustScore(${idx}, 100)" class="w-6 h-6 bg-black/30 hover:bg-black/50 text-white rounded-full text-xs font-bold transition flex items-center justify-center">+</button>
+                        </div>
+                    </div>
+                    <div class="font-display text-2xl md:text-3xl font-extrabold text-yellow-300 text-shadow-gold">
+                        ${team.score} <span class="text-xs font-normal text-white/80">Pkt</span>
+                    </div>
+                `;
+                container.appendChild(teamCard);
+            });
+        }
+
+        function openQuestion(catIdx, qIdx) {
+            sound.playClick();
+            const qKey = `${catIdx}-${qIdx}`;
+            const catData = jeopardyData[catIdx];
+            const qData = catData.questions[qIdx];
+
+            const isDailyDouble = (gameState.dailyDoubleCoords === qKey);
+            const actualPoints = isDailyDouble ? qData.points * 2 : qData.points;
+
+            gameState.currentQ = {
+                key: qKey,
+                catIdx,
+                qIdx,
+                points: actualPoints,
+                qData
+            };
+
+            document.getElementById('modalCategory').innerText = catData.category;
+            document.getElementById('modalPoints').innerText = `${actualPoints} Punkte`;
+            document.getElementById('questionText').innerHTML = qData.q;
+            document.getElementById('solutionText').innerHTML = qData.a;
+
+            // Daily Double Badge toggle
+            const ddBadge = document.getElementById('dailyDoubleBadge');
+            if (isDailyDouble) {
+                ddBadge.classList.remove('hidden');
+                sound.playDailyDouble();
+            } else {
+                ddBadge.classList.add('hidden');
+            }
+
+            // Reset modal state
+            document.getElementById('solutionBox').classList.add('hidden');
+            document.getElementById('awardSection').classList.add('hidden');
+            document.getElementById('showSolutionBtn').classList.remove('hidden');
+            document.getElementById('timerContainer').classList.add('hidden');
+            resetTimer();
+
+            // Render Team Award Buttons
+            renderAwardButtons(actualPoints);
+
+            document.getElementById('questionModal').classList.remove('hidden');
+        }
+
+        function renderAwardButtons(points) {
+            const btnContainer = document.getElementById('awardTeamButtons');
+            btnContainer.innerHTML = '';
+
+            gameState.teams.forEach((team, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 bg-gradient-to-r ${team.color} text-white font-bold rounded-xl text-xs md:text-sm shadow hover:brightness-125 transition transform hover:scale-105 flex items-center space-x-1`;
+                btn.innerHTML = `<span>+${points} Pkt:</span> <span>${team.name}</span>`;
+                btn.onclick = () => awardPoints(idx, points);
+                btnContainer.appendChild(btn);
+            });
+        }
+
+        function revealSolution() {
+            sound.playCorrect();
+            document.getElementById('solutionBox').classList.remove('hidden');
+            document.getElementById('awardSection').classList.remove('hidden');
+            document.getElementById('showSolutionBtn').classList.add('hidden');
+            stopTimer();
+        }
+
+        function awardPoints(teamIdx, points) {
+            sound.playCorrect();
+            gameState.teams[teamIdx].score += points;
+            markQuestionAsUsed();
+            closeQuestionModal();
+            renderScoreboard();
+            checkGameCompletion();
+        }
+
+        function adjustScore(teamIdx, delta) {
+            sound.playClick();
+            gameState.teams[teamIdx].score += delta;
+            renderScoreboard();
+        }
+
+        function markQuestionAsUsed() {
+            if (gameState.currentQ) {
+                gameState.usedQuestions.add(gameState.currentQ.key);
+                renderGameBoard();
+            }
+        }
+
+        function closeQuestionModal() {
+            stopTimer();
+            if (gameState.currentQ && !document.getElementById('solutionBox').classList.contains('hidden')) {
+                gameState.usedQuestions.add(gameState.currentQ.key);
+                renderGameBoard();
+            }
+            document.getElementById('questionModal').classList.add('hidden');
+        }
+
+        function startTimer() {
+            sound.playClick();
+            resetTimer();
+            document.getElementById('timerContainer').classList.remove('hidden');
+            
+            const timerBar = document.getElementById('timerBar');
+            timerBar.style.width = '100%';
+            timerBar.classList.remove('animate-pulse');
+
+            let duration = 30;
+            gameState.timeLeft = duration;
+
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                const pct = (gameState.timeLeft / duration) * 100;
+                timerBar.style.width = `${pct}%`;
+
+                if (gameState.timeLeft <= 5 && gameState.timeLeft > 0) {
+                    sound.playTick();
+                }
+
+                if (gameState.timeLeft <= 0) {
+                    stopTimer();
+                    sound.playWrong();
+                    // Timer finishes: pulsing red bar without auto-revealing solution
+                    timerBar.classList.add('animate-pulse');
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
+            }
+        }
+
+        function resetTimer() {
+            stopTimer();
+            const timerBar = document.getElementById('timerBar');
+            if (timerBar) timerBar.style.width = '100%';
+        }
+
+        function openTeamModal() {
+            sound.playClick();
+            const container = document.getElementById('teamInputs');
+            container.innerHTML = '';
+
+            gameState.teams.forEach((team, idx) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-2";
+                div.innerHTML = `
+                    <input type="text" value="${team.name}" id="teamInput_${idx}" class="flex-grow bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-semibold focus:outline-none focus:border-yellow-400">
+                    ${gameState.teams.length > 2 ? `<button onclick="removeTeamInput(${idx})" class="text-red-400 hover:text-red-300 px-2 font-bold text-lg">✕</button>` : ''}
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('teamModal').classList.remove('hidden');
+        }
+
+        function closeTeamModal() {
+            document.getElementById('teamModal').classList.add('hidden');
+        }
+
+        /* Sync current input fields into teams array before adding/removing items */
+        function syncCurrentTeamInputs() {
+            gameState.teams.forEach((team, idx) => {
+                const input = document.getElementById(`teamInput_${idx}`);
+                if (input && input.value.trim() !== '') {
+                    team.name = input.value.trim();
+                }
+            });
+        }
+
+        function addTeamInput() {
+            if (gameState.teams.length >= 12) return;
+            syncCurrentTeamInputs();
+            const colors = [
+                "from-purple-600 to-indigo-800",
+                "from-cyan-600 to-blue-800",
+                "from-amber-500 to-red-700",
+                "from-teal-600 to-emerald-800",
+                "from-fuchsia-600 to-pink-800",
+                "from-violet-600 to-purple-900",
+                "from-rose-600 to-red-800",
+                "from-lime-600 to-green-800"
+            ];
+            gameState.teams.push({
+                name: `Team ${gameState.teams.length + 1}`,
+                score: 0,
+                color: colors[gameState.teams.length % colors.length]
+            });
+            openTeamModal();
+        }
+
+        function removeTeamInput(idx) {
+            if (gameState.teams.length <= 2) return;
+            syncCurrentTeamInputs();
+            gameState.teams.splice(idx, 1);
+            openTeamModal();
+        }
+
+        function saveTeams() {
+            sound.playClick();
+            syncCurrentTeamInputs();
+            renderScoreboard();
+            closeTeamModal();
+        }
+
+        function openTeacherSheet() {
+            sound.playClick();
+            const container = document.getElementById('teacherSheetContent');
+            container.innerHTML = '';
+
+            jeopardyData.forEach((cat) => {
+                const catBox = document.createElement('div');
+                catBox.className = "bg-slate-800/80 border border-slate-700 rounded-2xl p-4";
+                
+                let qRows = cat.questions.map(q => `
+                    <div class="py-2 border-b border-slate-700/60 last:border-0 text-sm">
+                        <div class="flex justify-between font-bold text-yellow-400 mb-1">
+                            <span>${q.points} Punkte</span>
+                        </div>
+                        <div class="text-gray-200 mb-1"><b>Frage:</b> ${q.q}</div>
+                        <div class="text-emerald-300"><b>Lösung:</b> ${q.a}</div>
+                    </div>
+                `).join('');
+
+                catBox.innerHTML = `
+                    <h3 class="font-display font-bold text-lg text-purple-300 border-b border-purple-500/30 pb-2 mb-3">
+                        ${cat.category} <span class="text-xs text-gray-400 font-normal">(${cat.description})</span>
+                    </h3>
+                    <div class="space-y-2">${qRows}</div>
+                `;
+                container.appendChild(catBox);
+            });
+
+            document.getElementById('teacherSheetModal').classList.remove('hidden');
+        }
+
+        function closeTeacherSheet() {
+            document.getElementById('teacherSheetModal').classList.add('hidden');
+        }
+
+        function checkGameCompletion() {
+            if (gameState.usedQuestions.size >= (jeopardyData.length * 5)) {
+                setTimeout(showVictory, 800);
+            }
+        }
+
+        function showVictory() {
+            let sorted = [...gameState.teams].sort((a, b) => b.score - a.score);
+            let winner = sorted[0];
+
+            document.getElementById('winnerText').innerHTML = `${winner.name}<br><span class="text-yellow-300 text-3xl">${winner.score} Punkte</span>`;
+            document.getElementById('victoryOverlay').classList.remove('hidden');
+            startFireworks();
+        }
+
+        function closeVictory() {
+            document.getElementById('victoryOverlay').classList.add('hidden');
+        }
+
+        function confirmReset() {
+            sound.playClick();
+            document.getElementById('resetModal').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            document.getElementById('resetModal').classList.add('hidden');
+        }
+
+        function executeReset() {
+            sound.playClick();
+            gameState.usedQuestions.clear();
+            gameState.teams.forEach(t => t.score = 0);
+            setRandomDailyDouble();
+            renderScoreboard();
+            renderGameBoard();
+            closeResetModal();
+            closeVictory();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        /* Simple Canvas Fireworks Animation */
+        function startFireworks() {
+            const canvas = document.getElementById('fireworksCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12,
+                    color: `hsl(${Math.random() * 360}, 100%, 60%)`,
+                    radius: Math.random() * 4 + 2,
+                    alpha: 1
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, idx) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= 0.015;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.fill();
+                });
+                particles = particles.filter(p => p.alpha > 0);
+                if (particles.length > 0) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>

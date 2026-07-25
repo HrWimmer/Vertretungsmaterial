@@ -1,0 +1,944 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Das Schweinespiel (Pig) - Das Risiko-Würfelspiel</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            fredoka: ['Fredoka', 'sans-serif'],
+            outfit: ['Outfit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    h1, h2, h3, .font-heading {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* 3D Dice Styles */
+    .scene {
+      width: 140px;
+      height: 140px;
+      perspective: 700px;
+      margin: 0 auto;
+    }
+
+    .cube {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 1s cubic-bezier(0.15, 0.85, 0.35, 1.2);
+      cursor: pointer;
+    }
+
+    .rolling {
+      animation: tumble 1s ease-in-out infinite;
+    }
+
+    @keyframes tumble {
+      0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.9); }
+      25% { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg) scale(1.1) translateY(-20px); }
+      50% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg) scale(0.95) translateY(0px); }
+      75% { transform: rotateX(1080deg) rotateY(540deg) rotateZ(270deg) scale(1.05) translateY(-10px); }
+      100% { transform: rotateX(1440deg) rotateY(720deg) rotateZ(360deg) scale(1); }
+    }
+
+    .cube-face {
+      position: absolute;
+      width: 140px;
+      height: 140px;
+      background: linear-gradient(145deg, #ffffff, #f8fafc);
+      border: 4px solid #cbd5e1;
+      border-radius: 28px;
+      display: grid;
+      grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+      padding: 16px;
+      box-shadow: inset 0 0 12px rgba(0,0,0,0.06), 0 15px 35px -5px rgba(0, 0, 0, 0.2);
+      box-sizing: border-box;
+    }
+
+    /* Standard Pips */
+    .pip {
+      display: block;
+      align-self: center;
+      justify-self: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #334155, #0f172a);
+      box-shadow: inset 1px 1px 3px rgba(0,0,0,0.6);
+    }
+
+    /* Red Pig Pip for Face 1 */
+    .pip-pig {
+      background: radial-gradient(circle at 35% 35%, #ef4444, #991b1b);
+      box-shadow: inset 1px 1px 3px rgba(0,0,0,0.5);
+      width: 38px;
+      height: 38px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      color: white;
+      font-size: 20px;
+    }
+
+    /* Die Face Orientations */
+    .face-1 { transform: rotateY(  0deg) translateZ(70px); }
+    .face-6 { transform: rotateY(180deg) translateZ(70px); }
+    .face-2 { transform: rotateY( 90deg) translateZ(70px); }
+    .face-5 { transform: rotateY(-90deg) translateZ(70px); }
+    .face-3 { transform: rotateX( 90deg) translateZ(70px); }
+    .face-4 { transform: rotateX(-90deg) translateZ(70px); }
+
+    .show-1 { transform: translateZ(-70px) rotateY(   0deg) rotateX(360deg); }
+    .show-2 { transform: translateZ(-70px) rotateY( -90deg) rotateX(360deg); }
+    .show-3 { transform: translateZ(-70px) rotateX( -90deg) rotateY(360deg); }
+    .show-4 { transform: translateZ(-70px) rotateX(  90deg) rotateY(360deg); }
+    .show-5 { transform: translateZ(-70px) rotateY(  90deg) rotateX(360deg); }
+    .show-6 { transform: translateZ(-70px) rotateY(-180deg) rotateX(360deg); }
+
+    /* Custom Pulse animation for active player */
+    @keyframes subtle-pulse {
+      0%, 100% { border-color: #6366f1; box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      50% { border-color: #818cf8; box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+    }
+    .active-player-card {
+      animation: subtle-pulse 2s infinite;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col min-h-screen">
+  <a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;background:rgba(15,23,42,0.85);color:#fff;padding:8px 14px;border-radius:999px;font-family:sans-serif;font-size:14px;text-decoration:none;border:1px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);">← Menü</a>
+
+  <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-rose-500 to-pink-500 flex items-center justify-center text-white shadow-md text-2xl font-bold">
+          🐷
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">Das Schweinespiel</h1>
+          <p class="text-xs text-slate-500 hidden sm:block">Das Risiko- & Wahrscheinlichkeitsspiel (Pig)</p>
+        </div>
+      </div>
+
+      <!-- Action & Config Buttons -->
+      <div class="flex items-center space-x-2">
+        <button onclick="toggleQRModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-slate-300" title="QR-Code für Schüler">
+          <i class="fa-solid fa-qrcode text-base text-indigo-600"></i>
+          <span class="hidden sm:inline">QR-Code</span>
+        </button>
+        <button onclick="toggleSetupModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-slate-300" title="Einstellungen">
+          <i class="fa-solid fa-users-gear text-base text-indigo-600"></i>
+          <span class="hidden sm:inline">Teams / Ziel</span>
+        </button>
+        <button onclick="toggleRulesModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-slate-300" title="Spielanleitung">
+          <i class="fa-solid fa-circle-info text-base text-slate-500"></i>
+          <span class="hidden sm:inline">Regeln</span>
+        </button>
+        <button onclick="toggleAudio()" id="audioToggleBtn" class="p-2 text-slate-600 hover:text-slate-900 rounded-lg bg-slate-100 border border-slate-200 hover:bg-slate-200 transition" title="Ton an/aus">
+          <i class="fa-solid fa-volume-high text-base"></i>
+        </button>
+        <button onclick="resetGamePrompt()" class="p-2 text-red-600 hover:text-red-700 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 transition" title="Neues Spiel">
+          <i class="fa-solid fa-rotate-right text-base"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 w-full">
+
+    <!-- LEFT COLUMN: Player / Team Scoreboard Cards -->
+    <section class="lg:col-span-4 flex flex-col gap-4">
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-trophy text-amber-500"></i> Punktestände
+          </h2>
+          <span id="targetScoreBadge" class="text-xs bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-full border border-indigo-200">
+            Ziel: 100
+          </span>
+        </div>
+
+        <div id="playersList" class="space-y-3">
+          <!-- Dynamically populated players -->
+        </div>
+      </div>
+
+      <!-- Turn History / Statistics Panel -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex-1 flex flex-col justify-between">
+        <div>
+          <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+            <i class="fa-solid fa-chart-line text-indigo-500"></i> Mathe & Wahrscheinlichkeit
+          </h3>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600">Würfe in dieser Runde:</span>
+              <span id="turnRollCount" class="font-bold text-slate-900 font-heading text-sm">0</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600">Chance auf Punkteverlust (1):</span>
+              <span class="font-bold text-red-600 font-heading text-sm">16,7% (1 von 6)</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600">Erwartungswert pro Wurf:</span>
+              <span class="font-bold text-emerald-600 font-heading text-sm">+3,33 Punkte</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-100">
+          <p class="text-xs text-slate-400 font-bold uppercase mb-1">Würfe dieser Runde:</p>
+          <div id="turnDiceHistory" class="flex flex-wrap gap-1.5 min-h-[32px] items-center">
+            <span class="text-xs text-slate-400 italic">Noch keine Würfe</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: Interactive Dice Rolling & Control Area -->
+    <section class="lg:col-span-8 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center relative overflow-hidden">
+      
+      <!-- Current Active Turn Header -->
+      <div class="w-full">
+        <div id="turnHeaderBanner" class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-800 text-sm font-bold font-heading mb-2">
+          <span id="activePlayerIndicator">Team 1</span> ist an der Reihe!
+        </div>
+
+        <!-- Current Unbanked Round Score Box -->
+        <div class="bg-gradient-to-b from-slate-50 to-indigo-50/30 rounded-2xl p-4 border border-indigo-100 my-3 max-w-md mx-auto shadow-inner">
+          <p class="text-xs font-bold text-slate-500 uppercase tracking-wider">Ungesicherte Runden-Punkte</p>
+          <div id="currentRoundScore" class="text-6xl font-black text-indigo-600 font-heading my-1 tracking-tight">0</div>
+          <p id="potentialTotalText" class="text-xs text-slate-500">
+            Gesamtsumme nach Sichern: <strong id="potentialTotalVal" class="text-indigo-900 font-bold">0</strong>
+          </p>
+        </div>
+      </div>
+
+      <!-- 3D Cube Container -->
+      <div class="scene my-6">
+        <div id="cube" class="cube show-1" onclick="rollDice()">
+          <!-- Face 1 (Pig Face) -->
+          <div class="cube-face face-1">
+            <div></div><div></div><div></div>
+            <div></div><div class="pip-pig">🐷</div><div></div>
+            <div></div><div></div><div></div>
+          </div>
+          <!-- Face 2 -->
+          <div class="cube-face face-2">
+            <div class="pip"></div><div></div><div></div>
+            <div></div><div></div><div></div>
+            <div></div><div></div><div class="pip"></div>
+          </div>
+          <!-- Face 3 -->
+          <div class="cube-face face-3">
+            <div class="pip"></div><div></div><div></div>
+            <div></div><div class="pip"></div><div></div>
+            <div></div><div></div><div class="pip"></div>
+          </div>
+          <!-- Face 4 -->
+          <div class="cube-face face-4">
+            <div class="pip"></div><div></div><div class="pip"></div>
+            <div></div><div></div><div></div>
+            <div class="pip"></div><div></div><div class="pip"></div>
+          </div>
+          <!-- Face 5 -->
+          <div class="cube-face face-5">
+            <div class="pip"></div><div></div><div class="pip"></div>
+            <div></div><div class="pip"></div><div></div>
+            <div class="pip"></div><div></div><div class="pip"></div>
+          </div>
+          <!-- Face 6 -->
+          <div class="cube-face face-6">
+            <div class="pip"></div><div></div><div class="pip"></div>
+            <div class="pip"></div><div></div><div class="pip"></div>
+            <div class="pip"></div><div></div><div class="pip"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Status Banner / Pig Out Message -->
+      <div id="statusMessage" class="min-h-[40px] flex items-center justify-center my-1">
+        <p class="text-sm font-semibold text-slate-600">Klicke auf Würfeln oder drücke die <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs font-mono">Leertaste</kbd></p>
+      </div>
+
+      <!-- Action Buttons Area -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 w-full max-w-md mt-4">
+        <button id="rollBtn" onclick="rollDice()" class="py-4 px-6 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-95 text-white font-extrabold text-lg rounded-2xl shadow-lg transition duration-150 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-dice text-2xl"></i>
+          <span>WEITERWÜRFELN</span>
+        </button>
+
+        <button id="bankBtn" onclick="bankPoints()" disabled class="py-4 px-6 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 active:scale-95 text-white font-extrabold text-lg rounded-2xl shadow-lg transition duration-150 flex items-center justify-center gap-2 disabled:opacity-40 disabled:pointer-events-none">
+          <i class="fa-solid fa-piggy-bank text-2xl"></i>
+          <span>SICHERN</span>
+        </button>
+      </div>
+
+    </section>
+  </main>
+
+  <!-- SETUP / TEAMS MODAL -->
+  <div id="setupModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative">
+      <button onclick="toggleSetupModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-sliders"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 font-heading">Spiel-Einstellungen</h3>
+          <p class="text-xs text-slate-500">Teams & Zielpunktzahl anpassen</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Target score select -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Ziel-Punktzahl:</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="setTargetScore(50)" id="targetBtn50" class="py-2 border-2 border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-500">50 Punkte</button>
+            <button onclick="setTargetScore(100)" id="targetBtn100" class="py-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-sm">100 Punkte</button>
+            <button onclick="setTargetScore(150)" id="targetBtn150" class="py-2 border-2 border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-500">150 Punkte</button>
+          </div>
+        </div>
+
+        <!-- Player Count & Names -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Anzahl Spieler / Teams:</label>
+          <div class="flex gap-2 mb-3">
+            <button onclick="setPlayerCount(2)" id="pCountBtn2" class="flex-1 py-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold rounded-xl text-sm">2 Teams</button>
+            <button onclick="setPlayerCount(3)" id="pCountBtn3" class="flex-1 py-2 border-2 border-slate-200 font-bold rounded-xl text-sm hover:border-indigo-500">3 Teams</button>
+            <button onclick="setPlayerCount(4)" id="pCountBtn4" class="flex-1 py-2 border-2 border-slate-200 font-bold rounded-xl text-sm hover:border-indigo-500">4 Teams</button>
+          </div>
+
+          <!-- Name inputs -->
+          <div id="playerNamesContainer" class="space-y-2">
+            <!-- Rendered by JS -->
+          </div>
+        </div>
+      </div>
+
+      <button onclick="applySetupAndReset()" class="w-full mt-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-md">
+        Speichern & Neues Spiel starten
+      </button>
+    </div>
+  </div>
+
+  <!-- RULES MODAL -->
+  <div id="rulesModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+      <button onclick="toggleRulesModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center text-2xl font-bold">
+          🐷
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 font-heading">Spielanleitung</h3>
+          <p class="text-xs text-slate-500">Regeln für „Das Schweinespiel“ (Pig)</p>
+        </div>
+      </div>
+
+      <div class="space-y-3 text-sm text-slate-600">
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="font-bold text-slate-800 block mb-1"><i class="fa-solid fa-trophy text-amber-500"></i> Ziel:</span>
+          Als erstes Team exakt oder mehr als <strong>100 Punkte</strong> erreichen und sichern.
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="font-bold text-slate-800 block mb-1"><i class="fa-solid fa-dice text-indigo-500"></i> Ablauf:</span>
+          <ul class="list-disc list-inside space-y-1">
+            <li>Ein Team würfelt beliebig oft hintereinander.</li>
+            <li><strong>Würfel 2 bis 6:</strong> Die Augenzahl wird zur aktuellen Runden-Summe addiert.</li>
+            <li>Du musst entscheiden: <strong>Weiterwürfeln</strong> oder <strong>Punkte sichern</strong> (Zug abgeben).</li>
+          </ul>
+        </div>
+
+        <div class="p-3 bg-red-50 rounded-xl border border-red-200 text-red-900">
+          <span class="font-bold block mb-1"><i class="fa-solid fa-piggy-bank text-red-600"></i> Achtung - Die 1 (Pig Out!):</span>
+          Fällt eine <strong>1</strong>, verfallen ALLE in dieser Runde gesammelten (noch nicht gesicherten) Punkte sofort und der Zug endet sofort!
+        </div>
+
+        <div class="p-3 bg-indigo-50 rounded-xl border border-indigo-200 text-indigo-900 text-xs">
+          <strong>Mathe-Tipp:</strong> Je mehr Punkte du in einer Runde ansammelst, desto mehr riskierst du beim nächsten Wurf! Ab wann lohnt sich das Sichern?
+        </div>
+      </div>
+
+      <button onclick="toggleRulesModal()" class="w-full mt-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">
+        Alles klar, weiter geht's!
+      </button>
+    </div>
+  </div>
+
+  <!-- WINNER CELEBRATION MODAL -->
+  <div id="winnerModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-slate-100 text-center relative transform scale-100">
+      <div class="w-20 h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner animate-bounce">
+        🏆
+      </div>
+
+      <h3 class="text-3xl font-black text-slate-900 font-heading mb-1" id="winnerNameText">Team 1 gewinnt!</h3>
+      <p class="text-sm text-slate-500 mb-6">Herzlichen Glückwunsch! Die Zielpunktzahl wurde erreicht.</p>
+
+      <div class="bg-slate-50 rounded-2xl p-4 border border-slate-200 mb-6 text-left space-y-2 text-xs">
+        <div class="flex justify-between">
+          <span class="text-slate-500">Erreichte Punkte:</span>
+          <span id="winnerScoreText" class="font-bold text-slate-800 text-sm">102</span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-slate-500">Benötigte Runden:</span>
+          <span id="winnerRoundsText" class="font-bold text-slate-800 text-sm">8</span>
+        </div>
+      </div>
+
+      <button onclick="resetGame()" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-extrabold text-lg rounded-2xl shadow-lg transition">
+        Neues Spiel starten
+      </button>
+    </div>
+  </div>
+
+  <!-- QR CODE MODAL -->
+  <div id="qrModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative text-center">
+      <button onclick="toggleQRModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4 text-left">
+        <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-qrcode"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 font-heading">QR-Code für Schüler</h3>
+          <p class="text-xs text-slate-500">Auf Smartphones/Tablets weiterspielen</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center my-3">
+        <img id="qrCodeImg" src="" alt="QR Code" class="w-48 h-48 rounded-lg shadow-sm bg-white p-2 border border-slate-200">
+        <p class="text-xs text-slate-500 mt-2">Scanne den Code mit der Kamera deines Tablets/Handys</p>
+      </div>
+
+      <div class="space-y-3 text-left">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Web-Adresse (URL):</label>
+          <div class="flex gap-2">
+            <input type="text" id="qrUrlInput" class="flex-1 text-xs p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" oninput="updateQRCodeFromInput()">
+            <button onclick="copyQRUrl()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition" title="Link kopieren">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">
+            <i class="fa-solid fa-circle-info mr-1"></i>Hinweis: Auf GitHub Pages oder Schulservern passt sich der QR-Code automatisch an!
+          </p>
+        </div>
+      </div>
+
+      <button onclick="toggleQRModal()" class="w-full mt-4 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">
+        Schließen
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border border-slate-700 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <i id="toastIcon" class="fa-solid fa-info-circle text-indigo-400"></i>
+    <span id="toastMsg">Meldung</span>
+  </div>
+
+  <script>
+    /* 3D CUBE FACES MAP */
+    const cubeFaces = {
+      1: 'show-1',
+      2: 'show-2',
+      3: 'show-3',
+      4: 'show-4',
+      5: 'show-5',
+      6: 'show-6'
+    };
+
+    /* GAME STATE */
+    let targetScore = 100;
+    let players = [
+      { id: 0, name: 'Team 1', score: 0 },
+      { id: 1, name: 'Team 2', score: 0 }
+    ];
+    let activePlayerIndex = 0;
+    let currentRoundScore = 0;
+    let turnRolls = [];
+    let isRolling = false;
+    let audioEnabled = true;
+    let totalRoundsCount = 1;
+
+    /* AUDIO SYNTHESIS VIA WEB AUDIO API */
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+    }
+
+    function playRollSound() {
+      if (!audioEnabled) return;
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = Math.random() > 0.5 ? 'triangle' : 'square';
+          osc.frequency.setValueAtTime(120 + Math.random() * 280, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.04);
+        }, i * 90);
+      }
+    }
+
+    function playScoreSound() {
+      if (!audioEnabled) return;
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(520, audioCtx.currentTime + 0.12);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.12);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.12);
+    }
+
+    function playPigOutSound() {
+      if (!audioEnabled) return;
+      initAudio();
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(100, audioCtx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.4);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.4);
+    }
+
+    function playBankSound() {
+      if (!audioEnabled) return;
+      initAudio();
+      const notes = [400, 520, 650];
+      notes.forEach((freq, idx) => {
+        setTimeout(() => {
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.15);
+        }, idx * 70);
+      });
+    }
+
+    function playFanfare() {
+      if (!audioEnabled) return;
+      initAudio();
+      const notes = [523.25, 659.25, 783.99, 1046.50];
+      notes.forEach((freq, idx) => {
+        setTimeout(() => {
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.3);
+        }, idx * 120);
+      });
+    }
+
+    function rollDice() {
+      if (isRolling) return;
+
+      isRolling = true;
+      playRollSound();
+
+      const cube = document.getElementById('cube');
+      const rollBtn = document.getElementById('rollBtn');
+      const bankBtn = document.getElementById('bankBtn');
+
+      rollBtn.disabled = true;
+      bankBtn.disabled = true;
+
+      const rolledVal = Math.floor(Math.random() * 6) + 1;
+
+      cube.classList.add('rolling');
+
+      setTimeout(() => {
+        cube.classList.remove('rolling');
+        cube.className = 'cube ' + cubeFaces[rolledVal];
+
+        turnRolls.push(rolledVal);
+
+        if (rolledVal === 1) {
+          // PIG OUT! Lose unbanked points
+          playPigOutSound();
+          currentRoundScore = 0;
+          updateTurnUI();
+          
+          showPigOutMessage();
+
+          setTimeout(() => {
+            nextTurn();
+            isRolling = false;
+          }, 1800);
+
+        } else {
+          // Add score
+          playScoreSound();
+          currentRoundScore += rolledVal;
+          updateTurnUI();
+
+          const activeP = players[activePlayerIndex];
+          if (activeP.score + currentRoundScore >= targetScore) {
+            // Auto option to win or prompt
+            document.getElementById('statusMessage').innerHTML = `
+              <span class="text-emerald-600 font-extrabold animate-pulse">
+                🎉 Zielpunktzahl erreicht! Jetzt Punkte SICHERN zum Gewinnen!
+              </span>`;
+          } else {
+            document.getElementById('statusMessage').innerHTML = `
+              <span class="text-indigo-700 font-bold">
+                +${rolledVal} gewürfelt! Weiterwürfeln oder Punkte sichern?
+              </span>`;
+          }
+
+          rollBtn.disabled = false;
+          bankBtn.disabled = false;
+          isRolling = false;
+        }
+      }, 1000);
+    }
+
+    function showPigOutMessage() {
+      document.getElementById('statusMessage').innerHTML = `
+        <div class="px-4 py-2 bg-red-100 border border-red-300 rounded-xl text-red-700 font-extrabold flex items-center gap-2 animate-bounce">
+          <span>🐷 1 GEWÜRFELT! Alle Runden-Punkte futsch!</span>
+        </div>`;
+    }
+
+    function bankPoints() {
+      if (isRolling || currentRoundScore === 0) return;
+
+      playBankSound();
+
+      const activeP = players[activePlayerIndex];
+      activeP.score += currentRoundScore;
+
+      showToast(`${activeP.name} sichert ${currentRoundScore} Punkte!`, 'fa-piggy-bank');
+
+      currentRoundScore = 0;
+
+      // Check Winner
+      if (activeP.score >= targetScore) {
+        triggerWinner(activeP);
+        return;
+      }
+
+      nextTurn();
+    }
+
+    function nextTurn() {
+      activePlayerIndex = (activePlayerIndex + 1) % players.length;
+      if (activePlayerIndex === 0) totalRoundsCount++;
+
+      turnRolls = [];
+      currentRoundScore = 0;
+
+      document.getElementById('rollBtn').disabled = false;
+      document.getElementById('bankBtn').disabled = true;
+
+      document.getElementById('statusMessage').innerHTML = `
+        <p class="text-sm font-semibold text-slate-600">Klicke auf Würfeln oder drücke die <kbd class="px-2 py-0.5 bg-slate-100 border border-slate-300 rounded text-xs font-mono">Leertaste</kbd></p>`;
+
+      updateTurnUI();
+      renderPlayers();
+    }
+
+    function updateTurnUI() {
+      const activeP = players[activePlayerIndex];
+
+      document.getElementById('activePlayerIndicator').textContent = activeP.name;
+      document.getElementById('currentRoundScore').textContent = currentRoundScore;
+
+      const potential = activeP.score + currentRoundScore;
+      document.getElementById('potentialTotalVal').textContent = `${potential} / ${targetScore}`;
+
+      document.getElementById('turnRollCount').textContent = turnRolls.length;
+
+      const historyContainer = document.getElementById('turnDiceHistory');
+      if (turnRolls.length === 0) {
+        historyContainer.innerHTML = '<span class="text-xs text-slate-400 italic">Noch keine Würfe</span>';
+      } else {
+        historyContainer.innerHTML = turnRolls.map((num) => `
+          <span class="w-7 h-7 rounded-lg ${num === 1 ? 'bg-red-500 text-white' : 'bg-indigo-100 text-indigo-800'} font-bold font-heading flex items-center justify-center text-xs shadow-xs">
+            ${num === 1 ? '🐷' : num}
+          </span>
+        `).join('');
+      }
+
+      renderPlayers();
+    }
+
+    function renderPlayers() {
+      const container = document.getElementById('playersList');
+      container.innerHTML = players.map((p, idx) => {
+        const isActive = idx === activePlayerIndex;
+        const progressPct = Math.min(100, Math.round((p.score / targetScore) * 100));
+
+        return `
+          <div class="p-3.5 rounded-xl border-2 transition-all ${
+            isActive 
+              ? 'bg-indigo-50/70 border-indigo-500 shadow-md active-player-card' 
+              : 'bg-slate-50 border-slate-200 opacity-80'
+          }">
+            <div class="flex justify-between items-center mb-1.5">
+              <span class="font-bold font-heading text-sm text-slate-900 flex items-center gap-1.5">
+                ${isActive ? '<i class="fa-solid fa-play text-indigo-600 text-xs"></i>' : ''}
+                ${p.name}
+              </span>
+              <span class="font-black text-indigo-900 font-heading text-lg">
+                ${p.score} <span class="text-xs text-slate-400 font-normal">/ ${targetScore}</span>
+              </span>
+            </div>
+            <!-- Progress Bar -->
+            <div class="w-full bg-slate-200 h-2.5 rounded-full overflow-hidden">
+              <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${progressPct}%"></div>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function triggerWinner(player) {
+      playFanfare();
+      document.getElementById('winnerNameText').textContent = `${player.name} gewinnt! 🎉`;
+      document.getElementById('winnerScoreText').textContent = `${player.score} Punkte`;
+      document.getElementById('winnerRoundsText').textContent = `${totalRoundsCount} Runden`;
+      document.getElementById('winnerModal').classList.remove('hidden');
+    }
+
+    function resetGame() {
+      players.forEach(p => p.score = 0);
+      activePlayerIndex = 0;
+      currentRoundScore = 0;
+      turnRolls = [];
+      totalRoundsCount = 1;
+
+      document.getElementById('winnerModal').classList.add('hidden');
+      document.getElementById('rollBtn').disabled = false;
+      document.getElementById('bankBtn').disabled = true;
+
+      document.getElementById('statusMessage').innerHTML = `
+        <p class="text-sm font-semibold text-slate-600">Neues Spiel gestartet! Klicke auf Würfeln.</p>`;
+
+      updateTurnUI();
+      showToast('Spiel zurückgesetzt!', 'fa-rotate-right');
+    }
+
+    function resetGamePrompt() {
+      resetGame();
+    }
+
+    function toggleSetupModal() {
+      const modal = document.getElementById('setupModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        renderSetupNameInputs();
+      }
+    }
+
+    function toggleRulesModal() {
+      document.getElementById('rulesModal').classList.toggle('hidden');
+    }
+
+    function toggleQRModal() {
+      const modal = document.getElementById('qrModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        const currentUrl = window.location.href;
+        document.getElementById('qrUrlInput').value = currentUrl;
+        updateQRCode(currentUrl);
+      }
+    }
+
+    function updateQRCodeFromInput() {
+      const url = document.getElementById('qrUrlInput').value.trim();
+      if (url) {
+        updateQRCode(url);
+      }
+    }
+
+    function updateQRCode(url) {
+      const qrImg = document.getElementById('qrCodeImg');
+      const encoded = encodeURIComponent(url);
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encoded}`;
+    }
+
+    function copyQRUrl() {
+      const input = document.getElementById('qrUrlInput');
+      input.select();
+      document.execCommand('copy');
+      showToast('Link in Zwischenablage kopiert!', 'fa-copy');
+    }
+
+    function setTargetScore(score) {
+      targetScore = score;
+      document.getElementById('targetScoreBadge').textContent = `Ziel: ${score}`;
+      [50, 100, 150].forEach(s => {
+        const btn = document.getElementById(`targetBtn${s}`);
+        if (s === score) {
+          btn.className = 'py-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-sm';
+        } else {
+          btn.className = 'py-2 border-2 border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-500';
+        }
+      });
+    }
+
+    function setPlayerCount(count) {
+      while (players.length < count) {
+        players.push({ id: players.length, name: `Team ${players.length + 1}`, score: 0 });
+      }
+      if (players.length > count) {
+        players = players.slice(0, count);
+      }
+
+      [2, 3, 4].forEach(c => {
+        const btn = document.getElementById(`pCountBtn${c}`);
+        if (c === count) {
+          btn.className = 'flex-1 py-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold rounded-xl text-sm';
+        } else {
+          btn.className = 'flex-1 py-2 border-2 border-slate-200 font-bold rounded-xl text-sm hover:border-indigo-500';
+        }
+      });
+
+      renderSetupNameInputs();
+    }
+
+    function renderSetupNameInputs() {
+      const container = document.getElementById('playerNamesContainer');
+      container.innerHTML = players.map((p, idx) => `
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-bold text-slate-500 w-16">Team ${idx + 1}:</span>
+          <input type="text" value="${p.name}" id="pNameInput_${idx}" class="flex-1 text-xs p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+        </div>
+      `).join('');
+    }
+
+    function applySetupAndReset() {
+      players.forEach((p, idx) => {
+        const inp = document.getElementById(`pNameInput_${idx}`);
+        if (inp && inp.value.trim() !== '') {
+          p.name = inp.value.trim();
+        }
+      });
+
+      toggleSetupModal();
+      resetGame();
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('audioToggleBtn');
+      if (audioEnabled) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high text-base"></i>';
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-slate-600');
+        showToast('Ton eingeschaltet', 'fa-volume-high');
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-base"></i>';
+        btn.classList.add('text-slate-400');
+        showToast('Ton stummgeschaltet', 'fa-volume-xmark');
+      }
+    }
+
+    function showToast(msg, icon = 'fa-info-circle') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').className = `fa-solid ${icon} text-indigo-400`;
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    /* KEYBOARD CONTROLS */
+    document.addEventListener('keydown', (e) => {
+      if (document.activeElement.tagName === 'INPUT') return;
+
+      if (e.code === 'Space') {
+        e.preventDefault();
+        rollDice();
+      } else if (e.code === 'Enter') {
+        e.preventDefault();
+        bankPoints();
+      }
+    });
+
+    window.onload = function() {
+      updateTurnUI();
+    };
+  </script>
+</body>
+</html>

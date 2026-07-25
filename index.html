@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vertretungsmaterial – Hauptmenü</title>
+<style>
+  :root {
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: 'Segoe UI', Inter, system-ui, sans-serif;
+    background: linear-gradient(135deg, #02023a 0%, #0a0b2e 50%, #00001a 100%);
+    color: #f5f5ff;
+    padding: 2.5rem 1.25rem 4rem;
+  }
+  header {
+    text-align: center;
+    margin-bottom: 2.5rem;
+  }
+  header h1 {
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    margin: 0 0 0.5rem;
+    letter-spacing: 0.02em;
+  }
+  header p {
+    color: #b9c0ff;
+    margin: 0;
+    font-size: 1rem;
+  }
+  main {
+    max-width: 1000px;
+    margin: 0 auto;
+  }
+  .section-title {
+    font-size: 1.15rem;
+    font-weight: 700;
+    margin: 2.5rem 0 1rem;
+    color: #ffcc00;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .section-title:first-of-type { margin-top: 0; }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 1rem;
+  }
+  a.card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+    text-decoration: none;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 1.1rem 1.2rem;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+  }
+  a.card:hover, a.card:focus-visible {
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.11);
+    border-color: #ffcc00;
+  }
+  .card .emoji {
+    font-size: 1.6rem;
+  }
+  .card .title {
+    font-weight: 700;
+    font-size: 1.05rem;
+    line-height: 1.3;
+  }
+  .card .desc {
+    font-size: 0.85rem;
+    color: #c7cbf7;
+    line-height: 1.4;
+  }
+  footer {
+    text-align: center;
+    margin-top: 3rem;
+    color: #7a80b8;
+    font-size: 0.8rem;
+  }
+</style>
+</head>
+<body>
+  <header>
+    <h1>📚 Vertretungsmaterial – Hauptmenü</h1>
+    <p>Auf eine Kachel klicken, um das jeweilige Spiel zu öffnen</p>
+  </header>
+
+  <main>
+    <div class="section-title">Jeopardy-Quizspiele</div>
+    <div class="grid">
+      <a class="card" href="JeopardyAbschlussKlasse5.html">
+        <span class="emoji">🧮</span>
+        <span class="title">Mathe Jeopardy – 5. Klasse</span>
+        <span class="desc">Gymnasium Bayern, Abschluss-Quiz</span>
+      </a>
+      <a class="card" href="2.JeopardyAbschlussKlasse5.html">
+        <span class="emoji">🧮</span>
+        <span class="title">Mathe Jeopardy – 5. Klasse (Jahresrückblick)</span>
+        <span class="desc">Zweite Version, Jahresrückblick</span>
+      </a>
+      <a class="card" href="JeopardyAllgemeinwissenUnterstufe.html">
+        <span class="emoji">🌍</span>
+        <span class="title">Allgemeinwissen Jeopardy – Unterstufe</span>
+        <span class="desc">Klasse 5–7</span>
+      </a>
+      <a class="card" href="JeopardyAllgemeinwissenMittelstufeeinfach.html">
+        <span class="emoji">🌍</span>
+        <span class="title">Allgemeinwissen Jeopardy – 9. Klasse</span>
+        <span class="desc">Quizduell Edition</span>
+      </a>
+      <a class="card" href="JeopardyAllgemeinwissenschwierig.html">
+        <span class="emoji">🌍</span>
+        <span class="title">Allgemeinwissen Jeopardy – 9. Klasse</span>
+        <span class="desc">Pro Edition, schwieriger</span>
+      </a>
+    </div>
+
+    <div class="section-title">Kopfrechnen &amp; Strategiespiele</div>
+    <div class="grid">
+      <a class="card" href="1000undraus.html">
+        <span class="emoji">🎲</span>
+        <span class="title">1000 und raus</span>
+        <span class="desc">Das Würfelspiel</span>
+      </a>
+      <a class="card" href="Schweinespielchen.html">
+        <span class="emoji">🐷</span>
+        <span class="title">Das Schweinespiel (Pig)</span>
+        <span class="desc">Das Risiko-Würfelspiel</span>
+      </a>
+      <a class="card" href="NimSpiel.html">
+        <span class="emoji">➖</span>
+        <span class="title">Das Nim-Spiel (15 Striche)</span>
+        <span class="desc">Strategie- &amp; Modulo-Spiel</span>
+      </a>
+      <a class="card" href="Zielzahljagd.html">
+        <span class="emoji">🎯</span>
+        <span class="title">Die Zielzahl-Jagd</span>
+        <span class="desc">Kopfrechnen mit allen 6 Zahlen</span>
+      </a>
+    </div>
+  </main>
+
+  <footer>Vertretungsmaterial &middot; Hauptmenü</footer>
+</body>
+</html>

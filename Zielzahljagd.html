@@ -1,0 +1,646 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full bg-slate-950">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Die Zielzahl-Jagd - Kopfrechnen mit allen 6 Zahlen</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome Icons & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=JetBrains+Mono:wght@700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            fredoka: ['Fredoka', 'sans-serif'],
+            outfit: ['Outfit', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    h1, h2, h3, .font-heading {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* Target board glowing background */
+    .target-board {
+      background: radial-gradient(circle at center, #1e1b4b 0%, #0f172a 100%);
+      box-shadow: 0 10px 40px -10px rgba(245, 158, 11, 0.25), inset 0 0 30px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Number card styling */
+    .number-card {
+      background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .number-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(245, 158, 11, 0.2);
+    }
+
+    /* Progress bar smooth transition */
+    .timer-bar {
+      transition: width 1s linear;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-100 flex flex-col min-h-screen bg-slate-950">
+  <a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;background:rgba(15,23,42,0.85);color:#fff;padding:8px 14px;border-radius:999px;font-family:sans-serif;font-size:14px;text-decoration:none;border:1px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);">← Menü</a>
+
+  <header class="bg-slate-900/90 backdrop-blur border-b border-slate-800 sticky top-0 z-30 shadow-lg">
+    <div class="max-w-4xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-500 to-red-600 flex items-center justify-center text-white shadow-md text-xl font-bold">
+          🎯
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight leading-none font-heading">Die Zielzahl-Jagd</h1>
+          <p class="text-xs text-amber-400 font-medium hidden sm:block">Regel: Nutzen Sie alle 6 Zahlen & mind. 2 verschiedene Rechenzeichen!</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-2">
+        <button onclick="toggleQRModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs sm:text-sm flex items-center space-x-1.5 transition border border-slate-700">
+          <i class="fa-solid fa-qrcode text-amber-400"></i>
+          <span class="hidden sm:inline">QR-Code</span>
+        </button>
+        <button onclick="toggleSetupModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold rounded-xl text-xs sm:text-sm flex items-center space-x-1.5 transition border border-slate-700">
+          <i class="fa-solid fa-sliders text-amber-400"></i>
+          <span class="hidden sm:inline">Optionen</span>
+        </button>
+        <button onclick="toggleAudio()" id="audioToggleBtn" class="p-2 text-slate-300 hover:text-white rounded-xl bg-slate-800 border border-slate-700 transition" title="Ton an/aus">
+          <i class="fa-solid fa-volume-high text-base"></i>
+        </button>
+        <button onclick="generateNewGame()" class="px-3.5 py-2 bg-gradient-to-r from-amber-500 to-red-600 hover:from-amber-600 hover:to-red-700 text-white font-bold rounded-xl text-xs sm:text-sm flex items-center space-x-1.5 transition shadow-lg">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          <span>Neue Jagd</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-3xl mx-auto px-4 py-6 flex-1 w-full flex flex-col gap-6 items-center">
+
+    <!-- 1. ZIELZAHL DISPLAY -->
+    <div class="w-full target-board rounded-3xl p-6 sm:p-8 border-2 border-amber-500/30 flex flex-col items-center justify-center text-center relative overflow-hidden">
+      <div class="flex items-center gap-2 mb-1">
+        <i class="fa-solid fa-bullseye text-amber-400 text-sm"></i>
+        <span class="text-xs font-bold uppercase tracking-widest text-amber-400/90 font-heading">ZIELZAHL</span>
+      </div>
+
+      <div id="targetDisplay" class="text-7xl sm:text-8xl font-black font-mono text-amber-400 tracking-wider py-2 drop-shadow-[0_0_25px_rgba(245,158,11,0.5)]">
+        ---
+      </div>
+
+      <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-lg">
+        Nutze <strong class="text-amber-400">alle 6 Zahlen</strong> und <strong class="text-amber-400">mindestens 2 verschiedene Rechenzeichen</strong> (+, −, ·, :), um exakt auf die Zielzahl zu kommen – oder so nah wie möglich heran!
+      </p>
+    </div>
+
+    <!-- 2. GEWÜRFELTE ZAHLEN (DIREKT UNTER DER ZIELZAHL) -->
+    <div class="w-full bg-slate-900/80 rounded-3xl p-5 border border-slate-800 shadow-xl flex flex-col items-center">
+      <div class="flex items-center justify-between w-full mb-4 px-2">
+        <span class="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2 font-heading">
+          <i class="fa-solid fa-cubes text-amber-400"></i> Gewürfelte Zahlen
+        </span>
+        <span class="text-[11px] font-semibold text-amber-400/90 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
+          ⚠️ Jede der 6 Zahlen genau 1x nutzen
+        </span>
+      </div>
+
+      <!-- 6 Numbers Row / Grid -->
+      <div id="cardsContainer" class="grid grid-cols-3 sm:grid-cols-6 gap-3 w-full">
+        <!-- Dynamically rendered 6 number cards -->
+      </div>
+    </div>
+
+    <!-- 3. TIMER SECTION -->
+    <div class="w-full bg-slate-900/80 rounded-3xl p-5 border border-slate-800 shadow-xl">
+      <div class="flex items-center justify-between mb-3">
+        <span class="text-sm font-bold text-slate-300 flex items-center gap-2 font-heading">
+          <i class="fa-solid fa-hourglass-half text-amber-400"></i> Timer
+        </span>
+        <span id="timerText" class="font-mono text-3xl font-black text-white tracking-widest">
+          03:00
+        </span>
+      </div>
+
+      <!-- Progress Bar -->
+      <div class="w-full bg-slate-950 rounded-full h-3.5 overflow-hidden mb-4 border border-slate-800">
+        <div id="timerBar" class="bg-gradient-to-r from-amber-500 to-red-500 h-full w-full timer-bar"></div>
+      </div>
+
+      <!-- Timer Controls -->
+      <div class="grid grid-cols-3 gap-3">
+        <button id="startTimerBtn" onclick="startTimer()" class="py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 transition shadow-lg">
+          <i class="fa-solid fa-play"></i> Start
+        </button>
+        <button id="pauseTimerBtn" onclick="pauseTimer()" class="py-3 bg-amber-600 hover:bg-amber-500 text-white font-bold rounded-2xl text-sm flex items-center justify-center gap-2 transition shadow-lg" disabled>
+          <i class="fa-solid fa-pause"></i> Pause
+        </button>
+        <button onclick="resetTimer()" class="py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-2xl text-sm flex items-center justify-center gap-2 transition border border-slate-700">
+          <i class="fa-solid fa-rotate-left"></i> Reset
+        </button>
+      </div>
+    </div>
+
+    <!-- 4. MUSTERLÖSUNG (UNTENSTEHEND) -->
+    <div class="w-full bg-slate-900/80 rounded-3xl p-5 border border-slate-800 shadow-xl">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-2">
+          <div class="w-8 h-8 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center font-bold">
+            <i class="fa-solid fa-key"></i>
+          </div>
+          <div>
+            <h3 class="text-sm font-bold text-white font-heading">Musterlösung (für Lehrkraft)</h3>
+            <p class="text-[11px] text-slate-400">Nutzt alle 6 Zahlen & mind. 2 verschiedene Rechenarten</p>
+          </div>
+        </div>
+
+        <button onclick="toggleSolution()" id="toggleSolutionBtn" class="px-4 py-2 bg-indigo-600/30 hover:bg-indigo-600 text-indigo-200 hover:text-white font-bold text-xs rounded-xl transition border border-indigo-500/40 flex items-center gap-1.5">
+          <i class="fa-solid fa-eye" id="solutionEyeIcon"></i>
+          <span id="solutionBtnText">Lösung einblenden</span>
+        </button>
+      </div>
+
+      <!-- Solution Display Container (Hidden by default) -->
+      <div id="solutionBox" class="mt-4 pt-4 border-t border-slate-800 hidden space-y-2">
+        <p id="solutionStatus" class="text-xs text-slate-400 italic">Lösungsweg unter Verwendung aller 6 Zahlen:</p>
+        <div id="solutionSteps" class="space-y-1.5 font-mono text-sm sm:text-base text-emerald-400 bg-slate-950 p-4 rounded-2xl border border-slate-800">
+          <!-- Dynamically computed math steps -->
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- SETUP MODAL -->
+  <div id="setupModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-800 relative">
+      <button onclick="toggleSetupModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-sliders"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-white font-heading">Spiel-Optionen</h3>
+          <p class="text-xs text-slate-400">Timer & Zielzahl anpassen</p>
+        </div>
+      </div>
+
+      <div class="space-y-4 text-sm">
+        <!-- Timer Length Select -->
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1.5">Timer-Dauer:</label>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="setTimerDuration(60)" id="timerBtn60" class="py-2.5 bg-slate-800 border border-slate-700 rounded-xl font-bold hover:border-amber-400 text-slate-300 text-xs">1 Minute</button>
+            <button onclick="setTimerDuration(120)" id="timerBtn120" class="py-2.5 bg-slate-800 border border-slate-700 rounded-xl font-bold hover:border-amber-400 text-slate-300 text-xs">2 Minuten</button>
+            <button onclick="setTimerDuration(180)" id="timerBtn180" class="py-2.5 bg-amber-500 border border-amber-400 rounded-xl font-bold text-slate-950 text-xs">3 Minuten</button>
+          </div>
+        </div>
+
+        <!-- Custom Target Number Input -->
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Eigene Zielzahl vorgeben (optional):</label>
+          <input type="number" id="customTargetInput" min="100" max="999" placeholder="z. B. 342 (leer lassen für Zufall)" class="w-full text-sm p-3 bg-slate-950 border border-slate-700 rounded-xl font-mono text-amber-400 outline-none focus:border-amber-400">
+        </div>
+      </div>
+
+      <button onclick="applySetupAndReset()" class="w-full mt-6 py-3 bg-gradient-to-r from-amber-500 to-red-600 text-white font-bold rounded-xl hover:from-amber-600 hover:to-red-700 transition shadow-lg">
+        Übernehmen & Neue Jagd starten
+      </button>
+    </div>
+  </div>
+
+  <!-- QR MODAL -->
+  <div id="qrModal" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-slate-900 rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-800 relative text-center">
+      <button onclick="toggleQRModal()" class="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4 text-left">
+        <div class="w-10 h-10 bg-amber-500/10 text-amber-400 rounded-xl flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-qrcode"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-white font-heading">QR-Code für Schüler</h3>
+          <p class="text-xs text-slate-400">Auf Smartphones/Tablets anzeigen</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-950 p-4 rounded-2xl border border-slate-800 flex flex-col items-center justify-center my-3">
+        <img id="qrCodeImg" src="" alt="QR Code" class="w-48 h-48 rounded-xl bg-white p-2 border border-slate-700">
+        <p class="text-[11px] text-slate-400 mt-2">Scanne den Code mit der Kamera deines Tablets oder Smartphones</p>
+      </div>
+
+      <div class="space-y-3 text-left">
+        <div>
+          <label class="block text-xs font-bold text-slate-300 mb-1">Web-Adresse (URL):</label>
+          <div class="flex gap-2">
+            <input type="text" id="qrUrlInput" class="flex-1 text-xs p-2.5 bg-slate-950 border border-slate-700 rounded-xl font-mono text-amber-400 outline-none focus:border-amber-400" oninput="updateQRCodeFromInput()">
+            <button onclick="copyQRUrl()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold rounded-xl transition border border-slate-700" title="Link kopieren">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="toggleQRModal()" class="w-full mt-4 py-2.5 bg-amber-500 text-slate-950 font-bold rounded-xl hover:bg-amber-400 transition">
+        Schließen
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-800 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border border-slate-700 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <i id="toastIcon" class="fa-solid fa-info-circle text-amber-400"></i>
+    <span id="toastMsg">Meldung</span>
+  </div>
+
+  <script>
+    /* GAME STATE */
+    let targetNumber = 342;
+    let currentCards = [2, 5, 7, 10, 25, 50];
+    let currentSolution = null; // { diff, path, val, distinctOps }
+
+    let timerDuration = 180; // default 3 min
+    let timerSecondsLeft = 180;
+    let timerInterval = null;
+    let isTimerRunning = false;
+    let audioEnabled = true;
+
+    /* AUDIO SYNTHESIS VIA WEB AUDIO API */
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+    }
+
+    function playSound(freq, duration = 0.1, type = 'sine') {
+      if (!audioEnabled) return;
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + duration);
+    }
+
+    /* GENERATION & SOLVER ENGINE */
+    function generateNewGame() {
+      const customTarget = parseInt(document.getElementById('customTargetInput').value);
+
+      if (!isNaN(customTarget) && customTarget >= 100 && customTarget <= 999) {
+        // Custom target given
+        targetNumber = customTarget;
+        currentCards = generateRandomCards();
+        currentSolution = solveTargetWithAllNumbers(currentCards, targetNumber);
+      } else {
+        // Automatically generate a round preferring a solution with AT LEAST 2 DIFFERENT OPERATIONS
+        let generated = generateGuaranteedGame();
+        currentCards = generated.cards;
+        targetNumber = generated.target;
+        currentSolution = generated.solution;
+      }
+
+      renderUI();
+      resetTimer();
+      hideSolution();
+
+      playSound(523.25, 0.15, 'triangle');
+      showToast('Neue Zielzahl-Jagd gestartet!', 'fa-arrows-rotate');
+    }
+
+    function generateRandomCards() {
+      const largePool = [25, 50, 75, 100];
+      const smallPool = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+      const cards = [];
+
+      const numLarge = Math.floor(Math.random() * 2) + 1; // 1 or 2 large
+      for (let i = 0; i < numLarge; i++) {
+        cards.push(largePool[Math.floor(Math.random() * largePool.length)]);
+      }
+      while (cards.length < 6) {
+        cards.push(smallPool[Math.floor(Math.random() * smallPool.length)]);
+      }
+      return cards.sort((a, b) => a - b);
+    }
+
+    /* Generate 6 numbers and find a suitable target (or best fit) requiring >= 2 distinct operations */
+    function generateGuaranteedGame() {
+      for (let attempt = 0; attempt < 250; attempt++) {
+        let cards = generateRandomCards();
+        // Pick a target between 120 and 890
+        let testTarget = Math.floor(Math.random() * 770) + 120;
+        let sol = solveTargetWithAllNumbers(cards, testTarget);
+
+        // Prefer exact or very close match (diff <= 5) AND at least 2 distinct math operators (+, -, *, /)
+        if (sol.diff <= 5 && sol.distinctOps >= 2 && sol.path.length === 5) {
+          return {
+            cards: cards,
+            target: testTarget,
+            solution: sol
+          };
+        }
+      }
+
+      // Fallback
+      let cards = [2, 5, 7, 10, 25, 50];
+      let sol = solveTargetWithAllNumbers(cards, 342);
+      return { cards, target: 342, solution: sol };
+    }
+
+    /* SOLVER ALGORITHM:
+       - Uses ALL 6 numbers
+       - Prioritizes solutions with AT LEAST 2 DIFFERENT MATH OPERATIONS (+, -, *, /)
+       - Finds exact or closest possible solution if exact isn't possible
+    */
+    function solveTargetWithAllNumbers(nums, target) {
+      let best = { diff: Infinity, path: [], val: 0, distinctOps: 0 };
+
+      function search(currentNums, path, usedOpsSet) {
+        // When reduced to 1 remaining number, ALL 6 numbers have been used!
+        if (currentNums.length === 1) {
+          let val = currentNums[0];
+          let diff = target !== null ? Math.abs(val - target) : 0;
+          let distinctOpsCount = usedOpsSet.size;
+
+          let isBetter = false;
+          if (diff < best.diff) {
+            isBetter = true;
+          } else if (diff === best.diff) {
+            // If diff is equal, prefer solutions with more distinct operations (at least 2)
+            if (distinctOpsCount > best.distinctOps) {
+              isBetter = true;
+            }
+          }
+
+          if (isBetter) {
+            best = { diff, path: [...path], val, distinctOps: distinctOpsCount };
+          }
+          // Stop early only if exact AND at least 2 distinct operations used
+          return target !== null && diff === 0 && distinctOpsCount >= 2;
+        }
+
+        for (let i = 0; i < currentNums.length; i++) {
+          for (let j = i + 1; j < currentNums.length; j++) {
+            let a = currentNums[i];
+            let b = currentNums[j];
+            let nextBase = currentNums.filter((_, idx) => idx !== i && idx !== j);
+
+            let ops = [
+              { res: a + b, expr: `${a} + ${b} = ${a + b}`, symbol: '+' },
+              { res: a * b, expr: `${a} × ${b} = ${a * b}`, symbol: '*' }
+            ];
+
+            if (a - b > 0) ops.push({ res: a - b, expr: `${a} - ${b} = ${a - b}`, symbol: '-' });
+            if (b - a > 0) ops.push({ res: b - a, expr: `${b} - ${a} = ${b - a}`, symbol: '-' });
+
+            if (b !== 0 && a % b === 0 && b !== 1) ops.push({ res: a / b, expr: `${a} ÷ ${b} = ${a / b}`, symbol: '/' });
+            if (a !== 0 && b % a === 0 && a !== 1) ops.push({ res: b / a, expr: `${b} ÷ ${a} = ${b / a}`, symbol: '/' });
+
+            for (let op of ops) {
+              let nextOpsSet = new Set(usedOpsSet);
+              nextOpsSet.add(op.symbol);
+              if (search([...nextBase, op.res], [...path, op.expr], nextOpsSet)) return true;
+            }
+          }
+        }
+        return false;
+      }
+
+      search(nums, [], new Set());
+      return best;
+    }
+
+    /* RENDER UI */
+    function renderUI() {
+      // 1. Render Target
+      document.getElementById('targetDisplay').textContent = targetNumber;
+
+      // 2. Render Cards
+      const container = document.getElementById('cardsContainer');
+      container.innerHTML = '';
+
+      currentCards.forEach(val => {
+        const cardEl = document.createElement('div');
+        cardEl.className = 'number-card py-5 px-2 rounded-2xl font-mono text-2xl sm:text-3xl font-extrabold text-amber-400 border border-slate-700/80 text-center flex items-center justify-center drop-shadow';
+        cardEl.textContent = val;
+        container.appendChild(cardEl);
+      });
+
+      // 3. Render Solution Steps
+      const stepsContainer = document.getElementById('solutionSteps');
+      const statusEl = document.getElementById('solutionStatus');
+
+      if (currentSolution && currentSolution.path.length > 0) {
+        if (currentSolution.diff === 0) {
+          statusEl.textContent = '✅ Exakte Punktlandung (alle 6 Zahlen & mind. 2 verschiedene Rechenarten):';
+        } else {
+          statusEl.textContent = `🎯 Nächstmögliches Ziel mit allen 6 Zahlen (Ergebnis: ${currentSolution.val}, Abweichung: ${currentSolution.diff}):`;
+        }
+
+        stepsContainer.innerHTML = currentSolution.path.map((step, idx) => `
+          <div class="flex items-center space-x-2">
+            <span class="text-slate-500 font-sans text-xs font-bold w-5">${idx + 1}.</span>
+            <span class="text-amber-300 font-bold">${step}</span>
+          </div>
+        `).join('');
+      } else {
+        stepsContainer.innerHTML = '<span class="text-slate-400 italic">Keine Lösung berechenbar.</span>';
+      }
+    }
+
+    /* MUSTERLÖSUNG TOGGLE */
+    function toggleSolution() {
+      const box = document.getElementById('solutionBox');
+      const eyeIcon = document.getElementById('solutionEyeIcon');
+      const btnText = document.getElementById('solutionBtnText');
+
+      if (box.classList.contains('hidden')) {
+        box.classList.remove('hidden');
+        eyeIcon.className = 'fa-solid fa-eye-slash';
+        btnText.textContent = 'Lösung ausblenden';
+        playSound(600, 0.1);
+      } else {
+        hideSolution();
+      }
+    }
+
+    function hideSolution() {
+      const box = document.getElementById('solutionBox');
+      const eyeIcon = document.getElementById('solutionEyeIcon');
+      const btnText = document.getElementById('solutionBtnText');
+
+      box.classList.add('hidden');
+      eyeIcon.className = 'fa-solid fa-eye';
+      btnText.textContent = 'Lösung einblenden';
+    }
+
+    /* TIMER CONTROLS */
+    function startTimer() {
+      if (isTimerRunning) return;
+      isTimerRunning = true;
+
+      document.getElementById('startTimerBtn').disabled = true;
+      document.getElementById('pauseTimerBtn').disabled = false;
+
+      playSound(600, 0.1);
+
+      timerInterval = setInterval(() => {
+        timerSecondsLeft--;
+        updateTimerDisplay();
+
+        if (timerSecondsLeft <= 0) {
+          clearInterval(timerInterval);
+          isTimerRunning = false;
+          document.getElementById('startTimerBtn').disabled = false;
+          document.getElementById('pauseTimerBtn').disabled = true;
+
+          playSound(880, 0.4, 'sawtooth');
+          showToast('⏳ DIE ZEIT IST ABGELAUFEN!', 'fa-hourglass-end');
+        }
+      }, 1000);
+    }
+
+    function pauseTimer() {
+      if (!isTimerRunning) return;
+      clearInterval(timerInterval);
+      isTimerRunning = false;
+      document.getElementById('startTimerBtn').disabled = false;
+      document.getElementById('pauseTimerBtn').disabled = true;
+      playSound(400, 0.1);
+    }
+
+    function resetTimer() {
+      pauseTimer();
+      timerSecondsLeft = timerDuration;
+      updateTimerDisplay();
+    }
+
+    function setTimerDuration(seconds) {
+      timerDuration = seconds;
+      [60, 120, 180].forEach(s => {
+        const btn = document.getElementById(`timerBtn${s}`);
+        if (s === seconds) {
+          btn.className = 'py-2.5 bg-amber-500 border border-amber-400 rounded-xl font-bold text-slate-950 text-xs';
+        } else {
+          btn.className = 'py-2.5 bg-slate-800 border border-slate-700 rounded-xl font-bold hover:border-amber-400 text-slate-300 text-xs';
+        }
+      });
+    }
+
+    function updateTimerDisplay() {
+      const mins = Math.floor(timerSecondsLeft / 60);
+      const secs = timerSecondsLeft % 60;
+      const str = `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+      document.getElementById('timerText').textContent = str;
+
+      const pct = (timerSecondsLeft / timerDuration) * 100;
+      document.getElementById('timerBar').style.width = `${pct}%`;
+    }
+
+    /* MODALS & OVERLAYS */
+    function toggleSetupModal() {
+      document.getElementById('setupModal').classList.toggle('hidden');
+    }
+
+    function toggleQRModal() {
+      const modal = document.getElementById('qrModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        const currentUrl = window.location.href;
+        document.getElementById('qrUrlInput').value = currentUrl;
+        updateQRCode(currentUrl);
+      }
+    }
+
+    function updateQRCodeFromInput() {
+      const url = document.getElementById('qrUrlInput').value.trim();
+      if (url) updateQRCode(url);
+    }
+
+    function updateQRCode(url) {
+      const qrImg = document.getElementById('qrCodeImg');
+      const encoded = encodeURIComponent(url);
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encoded}`;
+    }
+
+    function copyQRUrl() {
+      const input = document.getElementById('qrUrlInput');
+      input.select();
+      document.execCommand('copy');
+      showToast('Link in Zwischenablage kopiert!', 'fa-copy');
+    }
+
+    function applySetupAndReset() {
+      toggleSetupModal();
+      generateNewGame();
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('audioToggleBtn');
+      if (audioEnabled) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high text-base"></i>';
+        showToast('Ton eingeschaltet', 'fa-volume-high');
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-base"></i>';
+        showToast('Ton stummgeschaltet', 'fa-volume-xmark');
+      }
+    }
+
+    function showToast(msg, icon = 'fa-info-circle') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').className = `fa-solid ${icon} text-amber-400`;
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    window.onload = function() {
+      generateNewGame();
+    };
+  </script>
+</body>
+</html>

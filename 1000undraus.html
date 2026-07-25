@@ -1,0 +1,762 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>1000 und raus - Das Würfelspiel</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- FontAwesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <!-- QRCode.js Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            fredoka: ['Fredoka', 'sans-serif'],
+            outfit: ['Outfit', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    h1, h2, h3, .font-heading {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* Enhanced 3D Dice Styles */
+    .scene {
+      width: 130px;
+      height: 130px;
+      perspective: 700px;
+      margin: 0 auto;
+    }
+
+    .cube {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      transform-style: preserve-3d;
+      transition: transform 1.2s cubic-bezier(0.15, 0.85, 0.35, 1.2);
+      cursor: pointer;
+    }
+
+    .rolling {
+      animation: tumble 1.2s ease-in-out infinite;
+    }
+
+    @keyframes tumble {
+      0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg) scale(0.9); }
+      25% { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg) scale(1.1) translateY(-15px); }
+      50% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg) scale(0.95) translateY(0px); }
+      75% { transform: rotateX(1080deg) rotateY(540deg) rotateZ(270deg) scale(1.05) translateY(-10px); }
+      100% { transform: rotateX(1440deg) rotateY(720deg) rotateZ(360deg) scale(1); }
+    }
+
+    .cube-face {
+      position: absolute;
+      width: 130px;
+      height: 130px;
+      background: linear-gradient(145deg, #ffffff, #f1f5f9);
+      border: 3px solid #cbd5e1;
+      border-radius: 24px;
+      display: grid;
+      grid-template: repeat(3, 1fr) / repeat(3, 1fr);
+      padding: 14px;
+      box-shadow: inset 0 0 12px rgba(0,0,0,0.08), 0 12px 30px -5px rgba(0, 0, 0, 0.15);
+      box-sizing: border-box;
+    }
+
+    /* Dice dots styling */
+    .pip {
+      display: block;
+      align-self: center;
+      justify-self: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle at 35% 35%, #ef4444, #991b1b);
+      box-shadow: inset 1px 1px 3px rgba(0,0,0,0.5);
+    }
+
+    /* Standard die face positions */
+    .face-1 { transform: rotateY(  0deg) translateZ(65px); }
+    .face-6 { transform: rotateY(180deg) translateZ(65px); }
+    .face-2 { transform: rotateY( 90deg) translateZ(65px); }
+    .face-5 { transform: rotateY(-90deg) translateZ(65px); }
+    .face-3 { transform: rotateX( 90deg) translateZ(65px); }
+    .face-4 { transform: rotateX(-90deg) translateZ(65px); }
+
+    /* Rotations for showing faces */
+    .show-1 { transform: translateZ(-65px) rotateY(   0deg) rotateX(360deg); }
+    .show-2 { transform: translateZ(-65px) rotateY( -90deg) rotateX(360deg); }
+    .show-3 { transform: translateZ(-65px) rotateX( -90deg) rotateY(360deg); }
+    .show-4 { transform: translateZ(-65px) rotateX(  90deg) rotateY(360deg); }
+    .show-5 { transform: translateZ(-65px) rotateY(  90deg) rotateX(360deg); }
+    .show-6 { transform: translateZ(-65px) rotateY(-180deg) rotateX(360deg); }
+
+    /* Math Notebook paper background effect */
+    .math-grid {
+      background-size: 24px 24px;
+      background-image: 
+        linear-gradient(to right, rgba(148, 163, 184, 0.25) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 163, 184, 0.25) 1px, transparent 1px);
+      background-color: #fdfdfd;
+    }
+
+    /* Custom Input styling for Grid & Sum */
+    .grid-cell-input {
+      font-family: 'Fredoka', sans-serif;
+      text-align: center;
+      touch-action: manipulation;
+    }
+    .grid-cell-input:focus {
+      outline: none;
+      border-color: #4f46e5;
+      background-color: #eef2ff;
+      box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.25);
+    }
+    .carry-input {
+      font-family: 'Fredoka', sans-serif;
+      text-align: center;
+      color: #dc2626;
+      border: 1px dashed #fca5a5;
+      background-color: #fef2f2;
+    }
+    .carry-input:focus {
+      outline: none;
+      border-color: #dc2626;
+      background-color: #ffe4e6;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col min-h-screen">
+  <a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;background:rgba(15,23,42,0.85);color:#fff;padding:8px 14px;border-radius:999px;font-family:sans-serif;font-size:14px;text-decoration:none;border:1px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);">← Menü</a>
+
+  <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-blue-500 flex items-center justify-center text-white shadow-md text-xl font-bold">
+          <i class="fa-solid fa-dice-d6"></i>
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">1000 und raus!</h1>
+          <p class="text-xs text-slate-500 hidden sm:block">Das Mathematik-Würfelspiel</p>
+        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="flex items-center space-x-2">
+        <button onclick="switchView('student')" id="studentViewToggleBtn" class="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-emerald-200 shadow-sm" title="Nur Spielfeld anzeigen">
+          <i class="fa-solid fa-mobile-screen text-base"></i>
+          <span class="hidden sm:inline">Schüler-Modus</span>
+        </button>
+        <button id="qrBtn" onclick="openQrModal()" class="px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-indigo-200 shadow-sm" title="QR-Code anzeigen">
+          <i class="fa-solid fa-qrcode text-base"></i>
+          <span class="hidden sm:inline">QR-Code</span>
+        </button>
+        <button onclick="toggleRulesModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-slate-300" title="Spielanleitung">
+          <i class="fa-solid fa-circle-info text-base text-slate-500"></i>
+          <span class="hidden sm:inline">Regeln</span>
+        </button>
+        <button onclick="toggleAudio()" id="audioToggleBtn" class="p-2 text-slate-600 hover:text-slate-900 rounded-lg bg-slate-100 border border-slate-200 hover:bg-slate-200 transition" title="Ton an/aus">
+          <i class="fa-solid fa-volume-high text-base"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 w-full">
+    
+    <!-- LEFT COLUMN: 3D Dice Roller -->
+    <section id="diceSection" class="lg:col-span-5 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center">
+      <div>
+        <div class="flex items-center justify-between w-full mb-4">
+          <span id="rollCounterBadge" class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-xs font-bold font-heading">Wurf 0 / 9</span>
+          <button onclick="clearHistory()" class="text-xs text-slate-400 hover:text-slate-600 transition flex items-center gap-1">
+            <i class="fa-solid fa-rotate-left"></i> Zurücksetzen
+          </button>
+        </div>
+
+        <!-- 3D Cube Container -->
+        <div class="scene my-8">
+          <div id="cube" class="cube show-1" onclick="rollDice()">
+            <!-- Face 1 -->
+            <div class="cube-face face-1">
+              <div></div><div></div><div></div>
+              <div></div><div class="pip"></div><div></div>
+              <div></div><div></div><div></div>
+            </div>
+            <!-- Face 2 -->
+            <div class="cube-face face-2">
+              <div class="pip"></div><div></div><div></div>
+              <div></div><div></div><div></div>
+              <div></div><div></div><div class="pip"></div>
+            </div>
+            <!-- Face 3 -->
+            <div class="cube-face face-3">
+              <div class="pip"></div><div></div><div></div>
+              <div></div><div class="pip"></div><div></div>
+              <div></div><div></div><div class="pip"></div>
+            </div>
+            <!-- Face 4 -->
+            <div class="cube-face face-4">
+              <div class="pip"></div><div></div><div class="pip"></div>
+              <div></div><div></div><div></div>
+              <div class="pip"></div><div></div><div class="pip"></div>
+            </div>
+            <!-- Face 5 -->
+            <div class="cube-face face-5">
+              <div class="pip"></div><div></div><div class="pip"></div>
+              <div></div><div class="pip"></div><div></div>
+              <div class="pip"></div><div></div><div class="pip"></div>
+            </div>
+            <!-- Face 6 -->
+            <div class="cube-face face-6">
+              <div class="pip"></div><div></div><div class="pip"></div>
+              <div class="pip"></div><div></div><div class="pip"></div>
+              <div class="pip"></div><div></div><div class="pip"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Banner for currently rolled value -->
+        <div id="currentRollBanner" class="hidden my-2">
+          <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Gewürfelte Zahl</p>
+          <div id="currentRollValue" class="text-5xl font-black text-indigo-600 font-heading my-1">1</div>
+          <p class="text-xs text-slate-500">Trage die Ziffer in dein 3x3-Feld ein!</p>
+        </div>
+      </div>
+
+      <!-- Roll Button & History -->
+      <div class="w-full mt-4">
+        <button id="rollBtn" onclick="rollDice()" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-95 text-white font-extrabold text-lg rounded-xl shadow-lg transition duration-150 flex items-center justify-center gap-2">
+          <i class="fa-solid fa-dice text-2xl"></i>
+          <span>WÜRFELN (Leertaste)</span>
+        </button>
+
+        <div class="mt-4 pt-4 border-t border-slate-100">
+          <p class="text-xs text-slate-400 font-bold uppercase mb-2 text-left">Gewürfelte Zahlen:</p>
+          <div id="rollHistory" class="flex flex-wrap gap-2 min-h-[32px] items-center">
+            <span class="text-xs text-slate-400 italic">Noch keine Würfe</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- RIGHT COLUMN: Interactive 3x3 Manual Grid for Students (iPad / Tablet / Phone optimized) -->
+    <section id="gridSection" class="lg:col-span-7 bg-white rounded-2xl p-4 sm:p-6 border border-slate-200 shadow-sm flex flex-col justify-between">
+      <div>
+        <div class="flex items-center justify-between mb-4 border-b pb-3 border-slate-100">
+          <div>
+            <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2">
+              <i class="fa-solid fa-pen-ruler text-indigo-600"></i> Spielfeld & Schriftliche Addition
+            </h2>
+            <p class="text-xs text-slate-500">Trage die Augenzahlen ein und rechne das Ergebnis selbst aus.</p>
+          </div>
+          <button onclick="clearGrid()" class="text-xs text-slate-500 hover:text-red-600 bg-slate-100 hover:bg-red-50 px-3 py-2 rounded-lg border border-slate-200 transition flex items-center gap-1">
+            <i class="fa-solid fa-trash-can"></i> Leeren
+          </button>
+        </div>
+
+        <!-- Math Sheet Notebook Canvas Area -->
+        <div class="math-grid p-4 sm:p-6 rounded-2xl border border-slate-300 shadow-inner mb-2 flex flex-col items-center">
+          
+          <!-- Headers for Column Values (T, H, Z, E) -->
+          <div class="grid grid-cols-4 gap-2 sm:gap-3 w-full max-w-xs sm:max-w-md text-center text-xs font-bold text-slate-500 mb-2">
+            <span class="text-red-500 font-bold">T (1000er)</span>
+            <span>H (100er)</span>
+            <span>Z (10er)</span>
+            <span>E (1er)</span>
+          </div>
+
+          <!-- The 3x3 Manual Input Grid with Plus Sign -->
+          <div id="gridContainer" class="grid grid-cols-4 gap-2 sm:gap-3 w-full max-w-xs sm:max-w-md my-1">
+            <!-- Row 1 -->
+            <div></div>
+            <input type="text" inputmode="numeric" pattern="[1-6]*" maxlength="1" id="cell-0" oninput="handleCellInput(0)" onkeydown="handleCellKeyDown(event, 0)" class="grid-cell-input h-12 sm:h-16 bg-white border-2 border-slate-300 rounded-xl text-2xl sm:text-3xl font-bold text-slate-800 shadow-sm" placeholder="-" />
+            <input type="text" inputmode="numeric" pattern="[1-6]*" maxlength="1" id="cell-1" oninput="handleCellInput(1)" onkeydown="handleCellKeyDown(event, 1)" class="grid-cell-input h-12 sm:h-16 bg-white border-2 border-slate-300 rounded-xl text-2xl sm:text-3xl font-bold text-slate-800 shadow-sm" placeholder="-" />
+            <input type="text" inputmode="numeric" pattern="[1-6]*" maxlength="1" id="cell-2" oninput="handleCellInput(2)" onkeydown="handleCellKeyDown(event, 2)" class="grid-cell-input h-12 sm:h-16 bg-white border-2 border-slate-300 rounded-xl text-2xl sm:text-3xl font-bold text-slate-800 shadow-sm" placeholder="-" />
+
+            <!-- Row 2 -->
+            <div></div>
+            <input type="text" inputmode="numeric" pattern="[1-6]*" maxlength="1" id="cell-3" oninput="handleCellInput(3)" onkeydown="handleCellKeyDown(event, 3)" class="grid-cell-input h-12 sm:h-16 bg-white border-2 border-slate-300 rounded-xl text-2xl sm:text-3xl font-bold text-slate-800 shadow-sm" placeholder="-" />
+            <input type="text" inputmode="numeric" pattern="[1-6]*" maxlength="1" id="cell-4" oninput="handleCellInput(4)" onkeydown="handleCellKeyDown(event, 4)" class="grid-cell-input h-12 sm:h-16 bg-white border-2 border-slate-300 rounded-xl text-2xl sm:text-3xl font-bold text-slate-800 shadow-sm" placeholder="-" />
+            <input type="text" inputmode="numeric" pattern="[1-6]*" maxlength="1" id="cell-5" oninput="handleCellInput(5)" onkeydown="handleCellKeyDown(event, 5)" class="grid-cell-input h-12 sm:h-16 bg-white border-2 border-slate-300 rounded-xl text-2xl sm:text-3xl font-bold text-slate-800 shadow-sm" placeholder="-" />
+
+            <!-- Row 3 -->
+            <div class="flex items-center justify-center text-2xl sm:text-3xl font-bold text-slate-500">+</div>
+            <input type="text" inputmode="numeric" pattern="[1-6]*" maxlength="1" id="cell-6" oninput="handleCellInput(6)" onkeydown="handleCellKeyDown(event, 6)" class="grid-cell-input h-12 sm:h-16 bg-white border-2 border-slate-300 rounded-xl text-2xl sm:text-3xl font-bold text-slate-800 shadow-sm" placeholder="-" />
+            <input type="text" inputmode="numeric" pattern="[1-6]*" maxlength="1" id="cell-7" oninput="handleCellInput(7)" onkeydown="handleCellKeyDown(event, 7)" class="grid-cell-input h-12 sm:h-16 bg-white border-2 border-slate-300 rounded-xl text-2xl sm:text-3xl font-bold text-slate-800 shadow-sm" placeholder="-" />
+            <input type="text" inputmode="numeric" pattern="[1-6]*" maxlength="1" id="cell-8" oninput="handleCellInput(8)" onkeydown="handleCellKeyDown(event, 8)" class="grid-cell-input h-12 sm:h-16 bg-white border-2 border-slate-300 rounded-xl text-2xl sm:text-3xl font-bold text-slate-800 shadow-sm" placeholder="-" />
+          </div>
+
+          <!-- Student Carry Input Row (Übertrag) -->
+          <div class="w-full max-w-xs sm:max-w-md my-2">
+            <div class="text-left text-[11px] font-bold text-red-500 uppercase tracking-wider mb-1 pl-1">Übertrag:</div>
+            <div class="grid grid-cols-4 gap-2 sm:gap-3">
+              <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="user-carry-1000" class="carry-input h-10 sm:h-12 rounded-lg text-base sm:text-lg font-bold" placeholder="0" title="Übertrag Tausender" />
+              <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="user-carry-100" class="carry-input h-10 sm:h-12 rounded-lg text-base sm:text-lg font-bold" placeholder="0" title="Übertrag Hunderter" />
+              <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="user-carry-10" class="carry-input h-10 sm:h-12 rounded-lg text-base sm:text-lg font-bold" placeholder="0" title="Übertrag Zehner" />
+              <!-- Leeres Feld für Einer, da hier kein Übertrag entsteht -->
+              <div></div>
+            </div>
+          </div>
+
+          <!-- Addition Separator Line -->
+          <div class="w-full max-w-xs sm:max-w-md border-b-4 border-slate-800 my-1"></div>
+
+          <!-- Student Total Sum Input Line -->
+          <div class="w-full max-w-xs sm:max-w-md mt-3">
+            <label class="block text-xs font-bold text-slate-600 mb-1">Deine berechnete Gesamtsumme:</label>
+            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="userTotalInput" class="w-full h-14 sm:h-16 text-center bg-white border-2 border-indigo-500 rounded-xl text-3xl sm:text-4xl font-extrabold font-heading text-indigo-900 shadow-sm focus:ring-4 focus:ring-indigo-200 outline-none" placeholder="z. B. 1012">
+          </div>
+        </div>
+      </div>
+      
+      <p class="text-center text-xs text-slate-400 mt-2">
+        <i class="fa-solid fa-pen"></i> Trage die Ziffern ein und rechne schriftlich zusammen.
+      </p>
+    </section>
+
+  </main>
+
+  <!-- QR CODE MODAL WITH URL INPUT FIELD & EXPLANATION -->
+  <div id="qrModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 text-center relative max-h-[90vh] overflow-y-auto">
+      <button onclick="closeQrModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3 text-2xl">
+        <i class="fa-solid fa-qrcode"></i>
+      </div>
+
+      <h3 class="text-xl font-bold text-slate-900 font-heading mb-1">QR-Code für Schüler (iPad / Handy)</h3>
+      <p class="text-xs text-slate-500 mb-3">
+        Scanne diesen QR-Code mit dem Smartphone oder iPad, um direkt zum 3x3 Eingabefeld zu gelangen.
+      </p>
+
+      <!-- Technical explanation banner -->
+      <div class="bg-amber-50 border border-amber-200 rounded-xl p-3 text-left text-xs text-amber-900 mb-4">
+        <p class="font-bold flex items-center gap-1.5 mb-1">
+          <i class="fa-solid fa-triangle-exclamation text-amber-600"></i> Wichtiger Hinweis zum Scannen:
+        </p>
+        <p class="leading-relaxed text-[11px] text-amber-800">
+          Ein QR-Code funktioniert auf Schüler-Geräten, wenn die Webseite online erreichbar ist (z. B. auf GitHub Pages, Schulhomepage, Moodle, Padlet).
+        </p>
+      </div>
+
+      <!-- Custom URL Input -->
+      <div class="text-left mb-4">
+        <label class="block text-xs font-bold text-slate-600 mb-1">Webseiten-URL für QR-Code anpassen:</label>
+        <div class="flex gap-2">
+          <input type="text" id="customQrUrlInput" oninput="updateQrCodeFromInput()" class="flex-1 text-xs p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono focus:ring-2 focus:ring-indigo-500 outline-none" placeholder="https://deine-schule.de/1000undraus.html">
+          <button onclick="resetQrUrlToCurrent()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold rounded-lg">Auto</button>
+        </div>
+      </div>
+
+      <!-- Container where QR Code image is generated -->
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 inline-block mx-auto mb-3">
+        <div id="qrcodeCanvas" class="flex justify-center"></div>
+      </div>
+
+      <p class="text-[11px] text-indigo-600 font-mono mb-4 break-all px-2" id="qrUrlText"></p>
+
+      <div class="flex flex-col sm:flex-row gap-2">
+        <button onclick="copyQrLink()" class="flex-1 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5 border border-slate-300">
+          <i class="fa-solid fa-copy"></i> Link kopieren
+        </button>
+        <button onclick="openStudentViewDirectly()" class="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white font-bold rounded-xl text-xs transition flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-mobile-screen"></i> Schüler-Modus öffnen
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ANLEITUNG MODAL -->
+  <div id="rulesModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+      <button onclick="toggleRulesModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-book-open"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 font-heading">Spielanleitung</h3>
+          <p class="text-xs text-slate-500">Regeln für „1000 und raus“</p>
+        </div>
+      </div>
+
+      <div class="space-y-3 text-sm text-slate-600">
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="font-bold text-slate-800 block mb-1"><i class="fa-solid fa-box text-indigo-500"></i> Material:</span>
+          1 Würfel (Zahlen 1–6) & 3x3 Raster auf Papier oder Tablet.
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="font-bold text-slate-800 block mb-1"><i class="fa-solid fa-play text-indigo-500"></i> Spielablauf:</span>
+          <ol class="list-decimal list-inside space-y-1">
+            <li>Es wird nacheinander 9-mal gewürfelt.</li>
+            <li>Jede gewürfelte Zahl (1–6) muss sofort in ein beliebiges freies Feld des 3x3-Rasters eingetragen werden.</li>
+            <li>Die 3 entstandenen dreistelligen Zahlen werden schriftlich addiert.</li>
+          </ol>
+        </div>
+
+        <div class="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900">
+          <span class="font-bold block mb-1"><i class="fa-solid fa-trophy text-amber-600"></i> Ziel & Gewinnbedingung:</span>
+          Wer am dichtesten an <strong>1000</strong> herankommt, gewinnt! <br>
+          <em class="text-xs text-amber-700">Achtung: Wenn deine Gesamtsumme über 1000 liegt (z. B. 1012), bist du <strong>„raus“</strong>!</em>
+        </div>
+
+        <div class="p-3 bg-indigo-50 rounded-xl border border-indigo-200 text-indigo-900 text-xs">
+          <strong>Belohnung:</strong> Wer gewinnt, darf als Nächstes unter der Dokumentenkamera (Dokucam) die nächste Runde für die Klasse anleiten!
+        </div>
+      </div>
+
+      <button onclick="toggleRulesModal()" class="w-full mt-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">
+        Verstanden & Los geht's!
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast Notification Message Box -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border border-slate-700 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <i id="toastIcon" class="fa-solid fa-info-circle text-indigo-400"></i>
+    <span id="toastMsg">Meldung</span>
+  </div>
+
+  <script>
+    /* CUBE FACES MAP */
+    const cubeFaces = {
+      1: 'show-1',
+      2: 'show-2',
+      3: 'show-3',
+      4: 'show-4',
+      5: 'show-5',
+      6: 'show-6'
+    };
+
+    /* GAME STATE VARIABLES */
+    let rollHistory = [];
+    let currentRolledNumber = null;
+    let audioEnabled = true;
+
+    /* AUDIO SYNTHESIS USING WEB AUDIO API */
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new AudioCtx();
+      }
+    }
+
+    function playDramaticDiceSound() {
+      if (!audioEnabled) return;
+      initAudio();
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      // Play rapid rolling clatters during the animation
+      for (let i = 0; i < 12; i++) {
+        setTimeout(() => {
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = Math.random() > 0.5 ? 'triangle' : 'square';
+          osc.frequency.setValueAtTime(100 + Math.random() * 300, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.04);
+        }, i * 90);
+      }
+
+      // Final impact sound on landing
+      setTimeout(() => {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(180, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(40, audioCtx.currentTime + 0.15);
+        gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.15);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.15);
+      }, 1150);
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('audioToggleBtn');
+      if (audioEnabled) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high text-base"></i>';
+        btn.classList.remove('text-slate-400');
+        btn.classList.add('text-slate-600');
+        showToast('Ton eingeschaltet', 'fa-volume-high');
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-base"></i>';
+        btn.classList.add('text-slate-400');
+        showToast('Ton stummgeschaltet', 'fa-volume-xmark');
+      }
+    }
+
+    /* DRAMATIC DICE ROLL LOGIC */
+    function rollDice() {
+      if (rollHistory.length >= 9) {
+        showToast('Es wurden bereits 9 Zahlen gewürfelt!', 'fa-triangle-exclamation');
+        return;
+      }
+
+      playDramaticDiceSound();
+
+      const cube = document.getElementById('cube');
+      const rollBtn = document.getElementById('rollBtn');
+      rollBtn.disabled = true;
+
+      const randRoll = Math.floor(Math.random() * 6) + 1;
+
+      // Add tumbling CSS animation
+      cube.classList.add('rolling');
+
+      setTimeout(() => {
+        cube.classList.remove('rolling');
+        // Set final 3D view rotation
+        cube.className = 'cube ' + cubeFaces[randRoll];
+        
+        currentRolledNumber = randRoll;
+        rollHistory.push(randRoll);
+
+        updateDiceUI();
+        rollBtn.disabled = false;
+      }, 1150);
+    }
+
+    function updateDiceUI() {
+      const badge = document.getElementById('rollCounterBadge');
+      badge.textContent = `Wurf ${rollHistory.length} / 9`;
+
+      const banner = document.getElementById('currentRollBanner');
+      const rollVal = document.getElementById('currentRollValue');
+
+      if (currentRolledNumber !== null) {
+        banner.classList.remove('hidden');
+        rollVal.textContent = currentRolledNumber;
+      } else {
+        banner.classList.add('hidden');
+      }
+
+      const historyContainer = document.getElementById('rollHistory');
+      if (rollHistory.length === 0) {
+        historyContainer.innerHTML = '<span class="text-xs text-slate-400 italic">Noch keine Würfe</span>';
+      } else {
+        historyContainer.innerHTML = rollHistory.map((num) => `
+          <span class="w-8 h-8 rounded-lg bg-indigo-50 border border-indigo-200 text-indigo-700 font-bold font-heading flex items-center justify-center text-sm shadow-xs">
+            ${num}
+          </span>
+        `).join('');
+      }
+    }
+
+    function clearHistory() {
+      rollHistory = [];
+      currentRolledNumber = null;
+      updateDiceUI();
+      showToast('Würfelverlauf zurückgesetzt', 'fa-rotate-left');
+    }
+
+    /* MANUAL GRID INPUT HANDLING */
+    function handleCellInput(index) {
+      const cell = document.getElementById(`cell-${index}`);
+      let val = cell.value.trim();
+
+      // Only allow numbers 1-6
+      if (val !== '' && (!/^[1-6]$/.test(val))) {
+        cell.value = '';
+        showToast('Nur Zahlen von 1 bis 6 erlaubt!', 'fa-triangle-exclamation');
+        return;
+      }
+
+      // Auto advance to next cell if number entered
+      if (val !== '' && index < 8) {
+        const nextCell = document.getElementById(`cell-${index + 1}`);
+        if (nextCell) nextCell.focus();
+      }
+    }
+
+    function handleCellKeyDown(e, index) {
+      if (e.key === 'ArrowRight' || e.key === 'Tab') {
+        if (index < 8) {
+          e.preventDefault();
+          document.getElementById(`cell-${index + 1}`).focus();
+        }
+      } else if (e.key === 'ArrowLeft') {
+        if (index > 0) {
+          e.preventDefault();
+          document.getElementById(`cell-${index - 1}`).focus();
+        }
+      } else if (e.key === 'Backspace' && document.getElementById(`cell-${index}`).value === '') {
+        if (index > 0) {
+          document.getElementById(`cell-${index - 1}`).focus();
+        }
+      }
+    }
+
+    function clearGrid() {
+      for (let i = 0; i < 9; i++) {
+        document.getElementById(`cell-${i}`).value = '';
+      }
+      if (document.getElementById('user-carry-1000')) document.getElementById('user-carry-1000').value = '';
+      if (document.getElementById('user-carry-100')) document.getElementById('user-carry-100').value = '';
+      if (document.getElementById('user-carry-10')) document.getElementById('user-carry-10').value = '';
+      document.getElementById('userTotalInput').value = '';
+      showToast('Spielfeld geleert', 'fa-trash-can');
+    }
+
+    /* QR CODE MODAL LOGIC */
+    let qrcodeObj = null;
+
+    function openQrModal() {
+      const modal = document.getElementById('qrModal');
+      modal.classList.remove('hidden');
+
+      const currentUrlInput = document.getElementById('customQrUrlInput');
+      if (!currentUrlInput.value) {
+        resetQrUrlToCurrent();
+      } else {
+        updateQrCodeFromInput();
+      }
+    }
+
+    function resetQrUrlToCurrent() {
+      const currentUrl = window.location.href.split('#')[0] + '#student';
+      document.getElementById('customQrUrlInput').value = currentUrl;
+      updateQrCodeFromInput();
+    }
+
+    function updateQrCodeFromInput() {
+      const url = document.getElementById('customQrUrlInput').value.trim() || window.location.href;
+      document.getElementById('qrUrlText').textContent = url;
+
+      const container = document.getElementById('qrcodeCanvas');
+      container.innerHTML = '';
+
+      qrcodeObj = new QRCode(container, {
+        text: url,
+        width: 170,
+        height: 170,
+        colorDark: "#0f172a",
+        colorLight: "#ffffff",
+        correctLevel: QRCode.CorrectLevel.H
+      });
+    }
+
+    function closeQrModal() {
+      document.getElementById('qrModal').classList.add('hidden');
+    }
+
+    function copyQrLink() {
+      const url = document.getElementById('qrUrlText').textContent;
+      const el = document.createElement('textarea');
+      el.value = url;
+      document.body.appendChild(el);
+      el.select();
+      document.execCommand('copy');
+      document.body.removeChild(el);
+      showToast('Link in Zwischenablage kopiert!', 'fa-copy');
+    }
+
+    function openStudentViewDirectly() {
+      closeQrModal();
+      switchView('student');
+    }
+
+    /* VIEW SWITCHING (STUDENT MODE / DOKUCAM MODE) */
+    function switchView(mode) {
+      const diceSection = document.getElementById('diceSection');
+      const gridSection = document.getElementById('gridSection');
+      const toggleBtn = document.getElementById('studentViewToggleBtn');
+
+      if (mode === 'student') {
+        diceSection.classList.add('hidden');
+        gridSection.classList.remove('lg:col-span-7');
+        gridSection.classList.add('lg:col-span-12', 'max-w-xl', 'mx-auto');
+        toggleBtn.onclick = () => switchView('full');
+        toggleBtn.innerHTML = '<i class="fa-solid fa-desktop text-base"></i><span class="hidden sm:inline">Vollansicht</span>';
+        toggleBtn.className = 'px-3 py-2 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-indigo-200 shadow-sm';
+        showToast('Schüler-Modus aktiviert', 'fa-mobile-screen');
+      } else {
+        diceSection.classList.remove('hidden');
+        gridSection.classList.remove('lg:col-span-12', 'max-w-xl', 'mx-auto');
+        gridSection.classList.add('lg:col-span-7');
+        toggleBtn.onclick = () => switchView('student');
+        toggleBtn.innerHTML = '<i class="fa-solid fa-mobile-screen text-base"></i><span class="hidden sm:inline">Schüler-Modus</span>';
+        toggleBtn.className = 'px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-emerald-200 shadow-sm';
+        showToast('Vollansicht aktiviert', 'fa-desktop');
+      }
+    }
+
+    function toggleRulesModal() {
+      document.getElementById('rulesModal').classList.toggle('hidden');
+    }
+
+    /* TOAST NOTIFICATION HELPERS */
+    function showToast(msg, icon = 'fa-info-circle') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').className = `fa-solid ${icon} text-indigo-400`;
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    /* KEYBOARD SHORTCUTS */
+    document.addEventListener('keydown', (e) => {
+      // Space bar rolls dice when not typing in an input
+      if (e.code === 'Space' && document.activeElement.tagName !== 'INPUT') {
+        e.preventDefault();
+        rollDice();
+      }
+    });
+
+    // Check hash on load
+    window.onload = function() {
+      updateDiceUI();
+      if (window.location.hash === '#student') {
+        switchView('student');
+      }
+    };
+  </script>
+</body>
+</html>

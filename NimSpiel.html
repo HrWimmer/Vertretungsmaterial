@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="de" class="h-full bg-slate-100">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Das Nim-Spiel (15 Striche) - Das Strategie- & Modulo-Spiel</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- FontAwesome & Google Fonts -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Outfit:wght@400;500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            fredoka: ['Fredoka', 'sans-serif'],
+            outfit: ['Outfit', 'sans-serif'],
+            handwritten: ['Permanent Marker', 'cursive'],
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    body {
+      font-family: 'Outfit', sans-serif;
+      user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    h1, h2, h3, .font-heading {
+      font-family: 'Fredoka', sans-serif;
+    }
+
+    /* Chalkboard style background */
+    .chalkboard {
+      background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+      box-shadow: inset 0 0 40px rgba(0, 0, 0, 0.8);
+    }
+
+    /* Interactive Stick Styling */
+    .stick-item {
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .stick-line {
+      width: 10px;
+      height: 140px;
+      background: linear-gradient(180deg, #38bdf8 0%, #818cf8 100%);
+      border-radius: 6px;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.5);
+      position: relative;
+      transition: all 0.3s ease;
+    }
+
+    @media (min-width: 640px) {
+      .stick-line {
+        width: 14px;
+        height: 180px;
+      }
+    }
+
+    /* Crossed Out State */
+    .stick-item.removed {
+      opacity: 0.25;
+      transform: scaleY(0.9) translateY(10px);
+      filter: grayscale(1);
+    }
+
+    .stick-item.removed .stick-line {
+      background: #64748b;
+      box-shadow: none;
+    }
+
+    .stick-item.removed .cross-mark {
+      opacity: 1;
+      transform: scale(1) rotate(-15deg);
+    }
+
+    .cross-mark {
+      opacity: 0;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.5) rotate(0deg);
+      color: #ef4444;
+      font-size: 2rem;
+      transition: all 0.3s ease;
+      pointer-events: none;
+    }
+
+    /* Selected state before taking */
+    .stick-item.selected .stick-line {
+      background: linear-gradient(180deg, #f43f5e 0%, #fb7185 100%);
+      box-shadow: 0 0 18px rgba(244, 63, 94, 0.8);
+      transform: translateY(-8px) scale(1.05);
+    }
+
+    /* Subtle pulse animation */
+    @keyframes pulse-border {
+      0%, 100% { border-color: #6366f1; box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.4); }
+      50% { border-color: #818cf8; box-shadow: 0 0 0 8px rgba(99, 102, 241, 0); }
+    }
+    .active-player-card {
+      animation: pulse-border 2s infinite;
+    }
+  </style>
+</head>
+<body class="h-full text-slate-800 flex flex-col min-h-screen">
+  <a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;background:rgba(15,23,42,0.85);color:#fff;padding:8px 14px;border-radius:999px;font-family:sans-serif;font-size:14px;text-decoration:none;border:1px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);">← Menü</a>
+
+  <header class="bg-white border-b border-slate-200 shadow-sm sticky top-0 z-30">
+    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-indigo-600 flex items-center justify-center text-white shadow-md text-xl font-bold">
+          🥢
+        </div>
+        <div>
+          <h1 class="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">Das Nim-Spiel</h1>
+          <p class="text-xs text-slate-500 hidden sm:block">15 Striche – Wer den letzten Strich nimmt, verliert!</p>
+        </div>
+      </div>
+
+      <!-- Action & Config Buttons -->
+      <div class="flex items-center space-x-2">
+        <button onclick="toggleQRModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-slate-300" title="QR-Code für Schüler">
+          <i class="fa-solid fa-qrcode text-base text-indigo-600"></i>
+          <span class="hidden sm:inline">QR-Code</span>
+        </button>
+        <button onclick="toggleSetupModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-slate-300" title="Einstellungen">
+          <i class="fa-solid fa-sliders text-base text-indigo-600"></i>
+          <span class="hidden sm:inline">Optionen</span>
+        </button>
+        <button onclick="toggleRulesModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold rounded-lg text-sm flex items-center space-x-1.5 transition border border-slate-300" title="Regeln & Mathe">
+          <i class="fa-solid fa-circle-info text-base text-slate-500"></i>
+          <span class="hidden sm:inline">Regeln</span>
+        </button>
+        <button onclick="toggleAudio()" id="audioToggleBtn" class="p-2 text-slate-600 hover:text-slate-900 rounded-lg bg-slate-100 border border-slate-200 hover:bg-slate-200 transition" title="Ton an/aus">
+          <i class="fa-solid fa-volume-high text-base"></i>
+        </button>
+        <button onclick="resetGame()" class="p-2 text-red-600 hover:text-red-700 rounded-lg bg-red-50 border border-red-200 hover:bg-red-100 transition" title="Neues Spiel">
+          <i class="fa-solid fa-rotate-right text-base"></i>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-6xl mx-auto px-4 py-6 grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1 w-full">
+
+    <!-- LEFT COLUMN: Player Status & Math Insight -->
+    <section class="lg:col-span-4 flex flex-col gap-4">
+      
+      <!-- Players Score / Turn Banner -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm">
+        <div class="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
+          <h2 class="text-base font-bold text-slate-800 flex items-center gap-2">
+            <i class="fa-solid fa-users text-indigo-500"></i> Duelle & Teams
+          </h2>
+          <span id="initialSticksBadge" class="text-xs bg-indigo-50 text-indigo-700 font-bold px-2.5 py-1 rounded-full border border-indigo-200">
+            Start: 15 Striche
+          </span>
+        </div>
+
+        <div id="playersList" class="space-y-3">
+          <!-- Dynamically populated players -->
+        </div>
+      </div>
+
+      <!-- Math Insight & History Panel -->
+      <div class="bg-white rounded-2xl p-5 border border-slate-200 shadow-sm flex-1 flex flex-col justify-between">
+        <div>
+          <div class="p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs space-y-2">
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600">Verbleibende Striche:</span>
+              <span id="remainingSticksCount" class="font-black text-indigo-600 font-heading text-lg">15</span>
+            </div>
+            <div class="flex justify-between items-center">
+              <span class="text-slate-600">Erlaubte Abzüge:</span>
+              <span class="font-bold text-slate-800 font-heading text-sm">1, 2 oder 3 Striche</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="mt-4 pt-3 border-t border-slate-100">
+          <p class="text-xs text-slate-400 font-bold uppercase mb-2">Spielverlauf:</p>
+          <div id="gameLog" class="space-y-1.5 max-h-40 overflow-y-auto text-xs pr-1">
+            <p class="text-slate-400 italic">Das Spiel hat begonnen!</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="lg:col-span-8 bg-white rounded-2xl p-6 border border-slate-200 shadow-sm flex flex-col justify-between items-center text-center relative overflow-hidden">
+
+      <!-- Current Turn Indicator Banner -->
+      <div class="w-full mb-4">
+        <div id="turnBanner" class="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-indigo-50 border border-indigo-200 text-indigo-900 font-bold font-heading text-base">
+          <span id="activePlayerText">Spieler 1</span> ist am Zug!
+        </div>
+      </div>
+
+      <!-- Main Chalkboard Area with Sticks -->
+      <div class="w-full chalkboard rounded-2xl p-6 my-2 min-h-[260px] flex flex-col justify-center items-center border-4 border-slate-700 relative shadow-2xl">
+        <div class="text-xs text-slate-400 font-mono mb-4 uppercase tracking-widest flex items-center gap-2">
+          <i class="fa-solid fa-pen-nib"></i> Klicke auf Knöpfe oder Striche
+        </div>
+
+        <!-- Sticks Display Container -->
+        <div id="sticksContainer" class="flex flex-wrap justify-center items-center gap-3 sm:gap-4 max-w-2xl px-2 py-4">
+          <!-- Dynamically populated sticks -->
+        </div>
+      </div>
+
+      <!-- Action Control Buttons -->
+      <div class="w-full max-w-lg mt-6">
+        <p class="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Wie viele Striche wegstreichen?</p>
+        <div class="grid grid-cols-3 gap-3">
+          <button id="take1Btn" onclick="takeSticks(1)" class="py-4 px-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-95 text-white font-black text-lg rounded-2xl shadow-md transition flex flex-col items-center justify-center">
+            <span class="text-2xl font-heading">1</span>
+            <span class="text-[10px] font-normal uppercase tracking-wider opacity-80">Strich</span>
+          </button>
+
+          <button id="take2Btn" onclick="takeSticks(2)" class="py-4 px-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-95 text-white font-black text-lg rounded-2xl shadow-md transition flex flex-col items-center justify-center">
+            <span class="text-2xl font-heading">2</span>
+            <span class="text-[10px] font-normal uppercase tracking-wider opacity-80">Striche</span>
+          </button>
+
+          <button id="take3Btn" onclick="takeSticks(3)" class="py-4 px-3 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 active:scale-95 text-white font-black text-lg rounded-2xl shadow-md transition flex flex-col items-center justify-center">
+            <span class="text-2xl font-heading">3</span>
+            <span class="text-[10px] font-normal uppercase tracking-wider opacity-80">Striche</span>
+          </button>
+        </div>
+      </div>
+
+    </section>
+  </main>
+
+
+  <!-- SETUP MODAL -->
+  <div id="setupModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative">
+      <button onclick="toggleSetupModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-sliders"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 font-heading">Spiel-Optionen</h3>
+          <p class="text-xs text-slate-500">Start-Anzahl & Modus anpassen</p>
+        </div>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Start Sticks Select -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Anzahl der Striche zum Start:</label>
+          <div class="grid grid-cols-4 gap-2">
+            <button onclick="setInitialSticks(12)" id="stickBtn12" class="py-2 border-2 border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-500">12</button>
+            <button onclick="setInitialSticks(15)" id="stickBtn15" class="py-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-sm">15</button>
+            <button onclick="setInitialSticks(20)" id="stickBtn20" class="py-2 border-2 border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-500">20</button>
+            <button onclick="setInitialSticks(21)" id="stickBtn21" class="py-2 border-2 border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-500">21</button>
+          </div>
+        </div>
+
+        <!-- Mode Select (2 Players vs Computer) -->
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Gegner / Spielmodus:</label>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="setGameMode('pvp')" id="modePvPBtn" class="py-3 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold rounded-xl text-xs flex items-center justify-center gap-2">
+              <i class="fa-solid fa-user-group text-base"></i>
+              <span>2 Spieler / Teams</span>
+            </button>
+            <button onclick="setGameMode('pve')" id="modePvEBtn" class="py-3 border-2 border-slate-200 text-slate-700 font-bold rounded-xl text-xs hover:border-indigo-500 flex items-center justify-center gap-2">
+              <i class="fa-solid fa-robot text-base text-indigo-600"></i>
+              <span>Gegen Computer (KI)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Player Names -->
+        <div id="playerNamesSetup">
+          <label class="block text-xs font-bold text-slate-700 mb-1">Namen der Spieler:</label>
+          <div class="space-y-2">
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold text-slate-500 w-16">Spieler 1:</span>
+              <input type="text" id="p1NameInput" value="Spieler 1" class="flex-1 text-xs p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+            <div class="flex items-center gap-2" id="p2NameContainer">
+              <span class="text-xs font-bold text-slate-500 w-16">Spieler 2:</span>
+              <input type="text" id="p2NameInput" value="Spieler 2" class="flex-1 text-xs p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-bold outline-none focus:ring-2 focus:ring-indigo-500">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <button onclick="applySetupAndReset()" class="w-full mt-6 py-3 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition shadow-md">
+        Speichern & Neues Spiel starten
+      </button>
+    </div>
+  </div>
+
+  <!-- RULES MODAL -->
+  <div id="rulesModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-100 relative max-h-[90vh] overflow-y-auto">
+      <button onclick="toggleRulesModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">
+          🥢
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 font-heading">Spielanleitung</h3>
+          <p class="text-xs text-slate-500">Das Nim-Spiel (Misère-Variante)</p>
+        </div>
+      </div>
+
+      <div class="space-y-3 text-sm text-slate-600">
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="font-bold text-slate-800 block mb-1"><i class="fa-solid fa-flag-checkered text-amber-500"></i> Ziel des Spiels:</span>
+          Bringe deinen Gegner dazu, den **allerletzten Strich** wegstreichen zu müssen!
+        </div>
+
+        <div class="p-3 bg-slate-50 rounded-xl border border-slate-200">
+          <span class="font-bold text-slate-800 block mb-1"><i class="fa-solid fa-arrows-rotate text-indigo-500"></i> Ablauf:</span>
+          <ul class="list-disc list-inside space-y-1">
+            <li>Zu Beginn befinden sich 15 Striche an der Tafel.</li>
+            <li>Abwechselnd nimmt jeder Spieler **1, 2 oder 3 Striche** weg.</li>
+            <li>Man darf in keinem Zug passen!</li>
+          </ul>
+        </div>
+
+        <div class="p-3 bg-red-50 rounded-xl border border-red-200 text-red-900">
+          <span class="font-bold block mb-1"><i class="fa-solid fa-skull text-red-600"></i> Verlierer:</span>
+          Wer gezwungen ist, den **letzten verbliebenen Strich** wegzunehmen, hat verloren!
+        </div>
+      </div>
+
+      <button onclick="toggleRulesModal()" class="w-full mt-5 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">
+        Verstanden, los geht's!
+      </button>
+    </div>
+  </div>
+
+  <!-- WINNER MODAL -->
+  <div id="winnerModal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-md z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-slate-100 text-center relative transform scale-100">
+      <div class="w-20 h-20 bg-amber-100 text-amber-500 rounded-full flex items-center justify-center mx-auto mb-4 text-4xl shadow-inner animate-bounce">
+        🏆
+      </div>
+
+      <h3 class="text-3xl font-black text-slate-900 font-heading mb-1" id="winnerNameText">Spieler 1 gewinnt!</h3>
+      <p class="text-sm text-slate-500 mb-6" id="winnerSubText">Der Gegner musste den letzten Strich nehmen!</p>
+
+      <button onclick="resetGame()" class="w-full py-4 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white font-extrabold text-lg rounded-2xl shadow-lg transition">
+        Revanche spielen
+      </button>
+    </div>
+  </div>
+
+  <div id="qrModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 relative text-center">
+      <button onclick="toggleQRModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-2 rounded-full">
+        <i class="fa-solid fa-xmark text-xl"></i>
+      </button>
+
+      <div class="flex items-center space-x-3 mb-4 text-left">
+        <div class="w-10 h-10 bg-indigo-100 text-indigo-600 rounded-xl flex items-center justify-center text-xl font-bold">
+          <i class="fa-solid fa-qrcode"></i>
+        </div>
+        <div>
+          <h3 class="text-xl font-bold text-slate-900 font-heading">QR-Code für Schüler</h3>
+          <p class="text-xs text-slate-500">Auf Smartphones/Tablets weiterspielen</p>
+        </div>
+      </div>
+
+      <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 flex flex-col items-center justify-center my-3">
+        <img id="qrCodeImg" src="" alt="QR Code" class="w-48 h-48 rounded-lg shadow-sm bg-white p-2 border border-slate-200">
+        <p class="text-xs text-slate-500 mt-2">Scanne den Code mit der Kamera deines Tablets/Handys</p>
+      </div>
+
+      <div class="space-y-3 text-left">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">Web-Adresse (URL):</label>
+          <div class="flex gap-2">
+            <input type="text" id="qrUrlInput" class="flex-1 text-xs p-2.5 bg-slate-50 border border-slate-300 rounded-lg font-mono text-slate-700 outline-none focus:ring-2 focus:ring-indigo-500" oninput="updateQRCodeFromInput()">
+            <button onclick="copyQRUrl()" class="px-3 py-2 bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg transition" title="Link kopieren">
+              <i class="fa-solid fa-copy"></i>
+            </button>
+          </div>
+          <p class="text-[11px] text-slate-400 mt-1">
+            <i class="fa-solid fa-circle-info mr-1"></i>Hinweis: Auf GitHub Pages oder Schulservern passt sich der QR-Code automatisch an!
+          </p>
+        </div>
+      </div>
+
+      <button onclick="toggleQRModal()" class="w-full mt-4 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition">
+        Schließen
+      </button>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION -->
+  <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl text-xs font-semibold flex items-center gap-2 border border-slate-700 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+    <i id="toastIcon" class="fa-solid fa-info-circle text-indigo-400"></i>
+    <span id="toastMsg">Meldung</span>
+  </div>
+
+  <script>
+    /* GAME STATE */
+    let initialSticks = 15;
+    let remainingSticks = 15;
+    let activePlayerIndex = 0;
+    let gameMode = 'pvp'; // 'pvp' or 'pve'
+    let players = [
+      { name: 'Spieler 1', score: 0 },
+      { name: 'Spieler 2', score: 0 }
+    ];
+    let isGameOver = false;
+    let isBotThinking = false;
+    let audioEnabled = true;
+
+    /* AUDIO SYNTHESIS VIA WEB AUDIO API */
+    const AudioCtx = window.AudioContext || window.webkitAudioContext;
+    let audioCtx = null;
+
+    function initAudio() {
+      if (!audioCtx) audioCtx = new AudioCtx();
+    }
+
+    function playStickSound() {
+      if (!audioEnabled) return;
+      initAudio();
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      
+      osc.type = 'triangle';
+      osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.08);
+
+      gain.gain.setValueAtTime(0.2, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.08);
+
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.08);
+    }
+
+    function playWinSound() {
+      if (!audioEnabled) return;
+      initAudio();
+      const notes = [440, 554.37, 659.25, 880];
+      notes.forEach((freq, idx) => {
+        setTimeout(() => {
+          if (!audioCtx) return;
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+          gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.25);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.25);
+        }, idx * 100);
+      });
+    }
+
+    /* GAME LOGIC */
+
+    function takeSticks(count) {
+      if (isGameOver || isBotThinking) return;
+      if (count < 1 || count > 3) return;
+      if (count > remainingSticks) {
+        showToast(`Es sind nur noch ${remainingSticks} Striche da!`, 'fa-exclamation-triangle');
+        return;
+      }
+
+      executeTake(count, players[activePlayerIndex].name);
+    }
+
+    function executeTake(count, playerStr) {
+      playStickSound();
+
+      remainingSticks -= count;
+      
+      logAction(`${playerStr} nimmt ${count} ${count === 1 ? 'Strich' : 'Striche'} (Noch ${remainingSticks})`);
+
+      updateSticksVisuals();
+      updateUI();
+
+      // Check Win/Loss Condition
+      if (remainingSticks === 0) {
+        // Player who took last stick LOSES!
+        isGameOver = true;
+        const loserIndex = activePlayerIndex;
+        const winnerIndex = (activePlayerIndex + 1) % 2;
+        
+        players[winnerIndex].score++;
+
+        setTimeout(() => {
+          triggerWinner(players[winnerIndex].name, players[loserIndex].name);
+        }, 500);
+        return;
+      }
+
+      // Switch Turn
+      activePlayerIndex = (activePlayerIndex + 1) % 2;
+      updateUI();
+
+      // AI Turn if PvE
+      if (gameMode === 'pve' && activePlayerIndex === 1 && !isGameOver) {
+        triggerBotTurn();
+      }
+    }
+
+    /* SMART BOT STRATEGY (Optimal Misère Subtraction Game) */
+    function triggerBotTurn() {
+      isBotThinking = true;
+      disableControls(true);
+
+      const turnBanner = document.getElementById('turnBanner');
+      if (turnBanner) {
+        turnBanner.innerHTML = `
+          <i class="fa-solid fa-spinner animate-spin text-indigo-600"></i>
+          <span>Computer überlegt...</span>
+        `;
+      }
+
+      setTimeout(() => {
+        let botTake = 1;
+
+        // Target state is remainingSticks % 4 === 1
+        const remainder = remainingSticks % 4;
+
+        if (remainder === 0) {
+          botTake = 3; // (4 - 1 = 3)
+        } else if (remainder === 3) {
+          botTake = 2; // (3 - 1 = 2)
+        } else if (remainder === 2) {
+          botTake = 1; // (2 - 1 = 1)
+        } else {
+          // Remainder is 1 (Bad position for bot), take 1 randomly
+          botTake = 1;
+        }
+
+        // Ensure bot take is valid
+        botTake = Math.min(botTake, remainingSticks);
+
+        isBotThinking = false;
+        disableControls(false);
+        executeTake(botTake, players[1].name);
+
+      }, 1000);
+    }
+
+
+    function renderSticks() {
+      const container = document.getElementById('sticksContainer');
+      container.innerHTML = '';
+
+      for (let i = 0; i < initialSticks; i++) {
+        const isRemoved = i >= remainingSticks;
+        const stickEl = document.createElement('div');
+        stickEl.className = `stick-item flex flex-col items-center cursor-pointer ${isRemoved ? 'removed' : ''}`;
+        stickEl.innerHTML = `
+          <div class="stick-line">
+            <div class="cross-mark">❌</div>
+          </div>
+          <span class="text-[10px] text-slate-400 font-mono mt-2">${i + 1}</span>
+        `;
+
+        if (!isRemoved) {
+          stickEl.onclick = () => handleStickClick(i);
+        }
+
+        container.appendChild(stickEl);
+      }
+    }
+
+    function handleStickClick(stickIdx) {
+      if (isGameOver || isBotThinking) return;
+
+      // Count how many valid sticks from stickIdx to the end
+      const countFromRight = remainingSticks - stickIdx;
+      if (countFromRight >= 1 && countFromRight <= 3) {
+        takeSticks(countFromRight);
+      } else {
+        showToast('Du kannst nur 1, 2 oder 3 Striche am Ende wegnehmen!', 'fa-hand-pointer');
+      }
+    }
+
+    function updateSticksVisuals() {
+      const items = document.querySelectorAll('.stick-item');
+      items.forEach((item, idx) => {
+        if (idx >= remainingSticks) {
+          item.classList.add('removed');
+        } else {
+          item.classList.remove('removed');
+        }
+      });
+    }
+
+    function updateUI() {
+      const remainingCountEl = document.getElementById('remainingSticksCount');
+      if (remainingCountEl) {
+        remainingCountEl.textContent = remainingSticks;
+      }
+
+      const activeP = players[activePlayerIndex];
+
+      if (!isBotThinking) {
+        const turnBanner = document.getElementById('turnBanner');
+        if (turnBanner) {
+          turnBanner.innerHTML = `<span id="activePlayerText">${activeP.name}</span> ist am Zug!`;
+        }
+      }
+
+      // Enable/disable buttons based on remaining sticks
+      const b1 = document.getElementById('take1Btn');
+      const b2 = document.getElementById('take2Btn');
+      const b3 = document.getElementById('take3Btn');
+
+      if (b1) b1.disabled = isGameOver || isBotThinking || remainingSticks < 1;
+      if (b2) b2.disabled = isGameOver || isBotThinking || remainingSticks < 2;
+      if (b3) b3.disabled = isGameOver || isBotThinking || remainingSticks < 3;
+
+      renderPlayers();
+    }
+
+    function disableControls(disabled) {
+      document.getElementById('take1Btn').disabled = disabled;
+      document.getElementById('take2Btn').disabled = disabled;
+      document.getElementById('take3Btn').disabled = disabled;
+    }
+
+    function renderPlayers() {
+      const container = document.getElementById('playersList');
+      container.innerHTML = players.map((p, idx) => {
+        const isActive = idx === activePlayerIndex;
+
+        return `
+          <div class="p-3.5 rounded-xl border-2 transition-all ${
+            isActive 
+              ? 'bg-indigo-50/70 border-indigo-500 shadow-md active-player-card' 
+              : 'bg-slate-50 border-slate-200 opacity-80'
+          }">
+            <div class="flex justify-between items-center">
+              <span class="font-bold font-heading text-sm text-slate-900 flex items-center gap-1.5">
+                ${isActive ? '<i class="fa-solid fa-play text-indigo-600 text-xs"></i>' : ''}
+                ${p.name}
+              </span>
+              <span class="font-bold text-indigo-900 text-xs bg-indigo-100 px-2.5 py-1 rounded-full">
+                ${p.score} Siege
+              </span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+
+    function logAction(msg) {
+      const log = document.getElementById('gameLog');
+      const p = document.createElement('p');
+      p.className = 'text-slate-700 flex items-center gap-1.5';
+      p.innerHTML = `<i class="fa-solid fa-chevron-right text-[10px] text-indigo-500"></i> ${msg}`;
+
+      if (log.querySelector('p.italic')) {
+        log.innerHTML = '';
+      }
+
+      log.prepend(p);
+    }
+
+    function triggerWinner(winnerName, loserName) {
+      playWinSound();
+      document.getElementById('winnerNameText').textContent = `${winnerName} gewinnt! 🎉`;
+      document.getElementById('winnerSubText').textContent = `${loserName} musste den letzten Strich nehmen.`;
+      document.getElementById('winnerModal').classList.remove('hidden');
+    }
+
+    function resetGame() {
+      remainingSticks = initialSticks;
+      activePlayerIndex = 0;
+      isGameOver = false;
+      isBotThinking = false;
+
+      document.getElementById('winnerModal').classList.add('hidden');
+      document.getElementById('gameLog').innerHTML = '<p class="text-slate-400 italic">Neues Spiel gestartet!</p>';
+
+      renderSticks();
+      updateUI();
+      showToast('Neues Spiel gestartet!', 'fa-rotate-right');
+    }
+
+    function toggleSetupModal() {
+      document.getElementById('setupModal').classList.toggle('hidden');
+    }
+
+    function toggleRulesModal() {
+      document.getElementById('rulesModal').classList.toggle('hidden');
+    }
+
+    function toggleQRModal() {
+      const modal = document.getElementById('qrModal');
+      modal.classList.toggle('hidden');
+      if (!modal.classList.contains('hidden')) {
+        const currentUrl = window.location.href;
+        document.getElementById('qrUrlInput').value = currentUrl;
+        updateQRCode(currentUrl);
+      }
+    }
+
+    function updateQRCodeFromInput() {
+      const url = document.getElementById('qrUrlInput').value.trim();
+      if (url) updateQRCode(url);
+    }
+
+    function updateQRCode(url) {
+      const qrImg = document.getElementById('qrCodeImg');
+      const encoded = encodeURIComponent(url);
+      qrImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encoded}`;
+    }
+
+    function copyQRUrl() {
+      const input = document.getElementById('qrUrlInput');
+      input.select();
+      document.execCommand('copy');
+      showToast('Link in Zwischenablage kopiert!', 'fa-copy');
+    }
+
+    function toggleHint() {
+      const box = document.getElementById('mathHintBox');
+      const label = document.getElementById('hintToggleState');
+      box.classList.toggle('hidden');
+      label.textContent = box.classList.contains('hidden') ? 'zeigen' : 'verbergen';
+    }
+
+    function setInitialSticks(count) {
+      initialSticks = count;
+      document.getElementById('initialSticksBadge').textContent = `Start: ${count} Striche`;
+
+      [12, 15, 20, 21].forEach(s => {
+        const btn = document.getElementById(`stickBtn${s}`);
+        if (s === count) {
+          btn.className = 'py-2 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 rounded-xl font-bold text-sm';
+        } else {
+          btn.className = 'py-2 border-2 border-slate-200 rounded-xl font-bold text-sm hover:border-indigo-500';
+        }
+      });
+    }
+
+    function setGameMode(mode) {
+      gameMode = mode;
+      const p2Container = document.getElementById('p2NameContainer');
+
+      if (mode === 'pve') {
+        players[1].name = 'Computer (KI)';
+        document.getElementById('modePvEBtn').className = 'py-3 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold rounded-xl text-xs flex items-center justify-center gap-2';
+        document.getElementById('modePvPBtn').className = 'py-3 border-2 border-slate-200 text-slate-700 font-bold rounded-xl text-xs hover:border-indigo-500 flex items-center justify-center gap-2';
+        p2Container.classList.add('hidden');
+      } else {
+        players[1].name = document.getElementById('p2NameInput').value || 'Spieler 2';
+        document.getElementById('modePvPBtn').className = 'py-3 border-2 border-indigo-600 bg-indigo-50 text-indigo-700 font-bold rounded-xl text-xs flex items-center justify-center gap-2';
+        document.getElementById('modePvEBtn').className = 'py-3 border-2 border-slate-200 text-slate-700 font-bold rounded-xl text-xs hover:border-indigo-500 flex items-center justify-center gap-2';
+        p2Container.classList.remove('hidden');
+      }
+    }
+
+    function applySetupAndReset() {
+      const p1Inp = document.getElementById('p1NameInput').value.trim();
+      const p2Inp = document.getElementById('p2NameInput').value.trim();
+
+      if (p1Inp) players[0].name = p1Inp;
+      if (gameMode === 'pvp' && p2Inp) players[1].name = p2Inp;
+
+      toggleSetupModal();
+      resetGame();
+    }
+
+    function toggleAudio() {
+      audioEnabled = !audioEnabled;
+      const btn = document.getElementById('audioToggleBtn');
+      if (audioEnabled) {
+        btn.innerHTML = '<i class="fa-solid fa-volume-high text-base"></i>';
+        btn.classList.remove('text-slate-400');
+        showToast('Ton eingeschaltet', 'fa-volume-high');
+      } else {
+        btn.innerHTML = '<i class="fa-solid fa-volume-xmark text-base"></i>';
+        btn.classList.add('text-slate-400');
+        showToast('Ton stummgeschaltet', 'fa-volume-xmark');
+      }
+    }
+
+    function showToast(msg, icon = 'fa-info-circle') {
+      const toast = document.getElementById('toast');
+      document.getElementById('toastMsg').textContent = msg;
+      document.getElementById('toastIcon').className = `fa-solid ${icon} text-indigo-400`;
+
+      toast.classList.remove('translate-y-20', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-20', 'opacity-0');
+      }, 2500);
+    }
+
+    /* KEYBOARD CONTROLS (1, 2, 3 keys) */
+    document.addEventListener('keydown', (e) => {
+      if (document.activeElement.tagName === 'INPUT') return;
+
+      if (e.key === '1') takeSticks(1);
+      if (e.key === '2') takeSticks(2);
+      if (e.key === '3') takeSticks(3);
+    });
+
+    window.onload = function() {
+      renderSticks();
+      updateUI();
+    };
+  </script>
+</body>
+</html>
