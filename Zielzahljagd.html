@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Die Zielzahl-Jagd - Kopfrechnen mit allen 6 Zahlen</title>
+  <title>Die Zielzahl-Jagd - Kopfrechnen mit allen Zahlen</title>
 
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
@@ -59,6 +59,74 @@
     .timer-bar {
       transition: width 1s linear;
     }
+
+    /* Rechenbaum (calculation tree) styling:
+       alle Startzahlen stehen in einer Reihe oben; jeder Rechenschritt-Kreis wird per JS
+       horizontal genau zwischen sein zwei Operanden (vorheriges Ergebnis / nächste Zahl)
+       gesetzt, sein Ergebnis kommt direkt darunter - dadurch bleiben die Verbindungslinien
+       kurze, gerade Diagonalen wie im Vorbild, egal wie viele Zahlen verwendet werden. */
+    .rb-container {
+      position: relative;
+      display: inline-block;
+      min-width: 100%;
+    }
+    .rb-top-row {
+      display: flex;
+      gap: 22px;
+      justify-content: center;
+      position: relative;
+      z-index: 2;
+    }
+    .rb-abs {
+      position: absolute;
+      transform: translateX(-50%);
+      z-index: 2;
+    }
+    .rb-svg {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 1;
+      overflow: visible;
+    }
+    .rb-circle {
+      width: 42px;
+      height: 42px;
+      min-width: 42px;
+      max-width: 42px;
+      border-radius: 9999px;
+      background: #1e293b;
+      border: 2px solid #f59e0b;
+      color: #fbbf24;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 1.1rem;
+      z-index: 2;
+    }
+    .rb-box {
+      display: inline-block;
+      width: max-content;
+      min-width: 46px;
+      padding: 8px 14px;
+      border: 2px solid #475569;
+      border-radius: 8px;
+      background: #0f172a;
+      color: #fbbf24;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 800;
+      font-size: 1rem;
+      text-align: center;
+      white-space: nowrap;
+      z-index: 2;
+    }
+    .rb-result {
+      border-color: #ef4444;
+      color: #f87171;
+    }
   </style>
 </head>
 <body class="h-full text-slate-100 flex flex-col min-h-screen bg-slate-950">
@@ -72,7 +140,7 @@
         </div>
         <div>
           <h1 class="text-xl sm:text-2xl font-bold text-white tracking-tight leading-none font-heading">Die Zielzahl-Jagd</h1>
-          <p class="text-xs text-amber-400 font-medium hidden sm:block">Regel: Nutzen Sie alle 6 Zahlen & mind. 2 verschiedene Rechenzeichen!</p>
+          <p id="ruleText" class="text-xs text-amber-400 font-medium hidden sm:block">Regel: Nutzen Sie alle 6 Zahlen & mind. 2 verschiedene Rechenzeichen!</p>
         </div>
       </div>
 
@@ -99,6 +167,20 @@
 
   <main class="max-w-3xl mx-auto px-4 py-6 flex-1 w-full flex flex-col gap-6 items-center">
 
+    <!-- 0. SCHWIERIGKEITSGRAD -->
+    <div class="w-full flex items-center gap-2 bg-slate-900/80 border border-slate-800 rounded-2xl p-2 shadow-xl">
+      <span class="hidden sm:inline text-[11px] font-bold text-slate-400 uppercase tracking-wider pl-2 pr-1">Schwierigkeit:</span>
+      <button onclick="setDifficulty(4)" id="diffBtn4" class="flex-1 py-2.5 bg-slate-800 border border-slate-700 rounded-xl font-bold hover:border-amber-400 text-slate-300 text-xs transition">
+        Leicht <span class="font-normal opacity-70">(4 Zahlen)</span>
+      </button>
+      <button onclick="setDifficulty(5)" id="diffBtn5" class="flex-1 py-2.5 bg-slate-800 border border-slate-700 rounded-xl font-bold hover:border-amber-400 text-slate-300 text-xs transition">
+        Mittel <span class="font-normal opacity-70">(5 Zahlen)</span>
+      </button>
+      <button onclick="setDifficulty(6)" id="diffBtn6" class="flex-1 py-2.5 bg-amber-500 border border-amber-400 rounded-xl font-bold text-slate-950 text-xs transition">
+        Schwer <span class="font-normal opacity-70">(6 Zahlen)</span>
+      </button>
+    </div>
+
     <!-- 1. ZIELZAHL DISPLAY -->
     <div class="w-full target-board rounded-3xl p-6 sm:p-8 border-2 border-amber-500/30 flex flex-col items-center justify-center text-center relative overflow-hidden">
       <div class="flex items-center gap-2 mb-1">
@@ -111,7 +193,7 @@
       </div>
 
       <p class="text-xs sm:text-sm text-slate-300 mt-2 max-w-lg">
-        Nutze <strong class="text-amber-400">alle 6 Zahlen</strong> und <strong class="text-amber-400">mindestens 2 verschiedene Rechenzeichen</strong> (+, −, ·, :), um exakt auf die Zielzahl zu kommen – oder so nah wie möglich heran!
+        Nutze <strong class="text-amber-400">alle <span id="targetCountText">6</span> Zahlen</strong> und <strong class="text-amber-400">mindestens 2 verschiedene Rechenzeichen</strong> (+, −, ·, :), um exakt auf die Zielzahl zu kommen – oder so nah wie möglich heran!
       </p>
     </div>
 
@@ -122,7 +204,7 @@
           <i class="fa-solid fa-cubes text-amber-400"></i> Gewürfelte Zahlen
         </span>
         <span class="text-[11px] font-semibold text-amber-400/90 bg-amber-500/10 px-2.5 py-1 rounded-full border border-amber-500/20">
-          ⚠️ Jede der 6 Zahlen genau 1x nutzen
+          ⚠️ Jede der <span id="cardsCountText">6</span> Zahlen genau 1x nutzen
         </span>
       </div>
 
@@ -171,7 +253,7 @@
           </div>
           <div>
             <h3 class="text-sm font-bold text-white font-heading">Musterlösung (für Lehrkraft)</h3>
-            <p class="text-[11px] text-slate-400">Nutzt alle 6 Zahlen & mind. 2 verschiedene Rechenarten</p>
+            <p class="text-[11px] text-slate-400">Nutzt alle <span id="solutionCountText">6</span> Zahlen & mind. 2 verschiedene Rechenarten</p>
           </div>
         </div>
 
@@ -223,7 +305,7 @@
         <!-- Custom Target Number Input -->
         <div>
           <label class="block text-xs font-bold text-slate-300 mb-1">Eigene Zielzahl vorgeben (optional):</label>
-          <input type="number" id="customTargetInput" min="100" max="999" placeholder="z. B. 342 (leer lassen für Zufall)" class="w-full text-sm p-3 bg-slate-950 border border-slate-700 rounded-xl font-mono text-amber-400 outline-none focus:border-amber-400">
+          <input type="number" id="customTargetInput" min="100" max="999" placeholder="z. B. 250 (leer lassen für Zufall 150–350)" class="w-full text-sm p-3 bg-slate-950 border border-slate-700 rounded-xl font-mono text-amber-400 outline-none focus:border-amber-400">
         </div>
       </div>
 
@@ -283,7 +365,9 @@
     /* GAME STATE */
     let targetNumber = 342;
     let currentCards = [2, 5, 7, 10, 25, 50];
-    let currentSolution = null; // { diff, path, val, distinctOps }
+    let currentSolution = null; // { diff, val, distinctOps, tree }
+    let numCount = 6; // Schwierigkeitsgrad: 4 = leicht, 5 = mittel, 6 = schwer
+    let currentRbSteps = []; // flattened Rechenbaum steps for the currently rendered solution
 
     let timerDuration = 180; // default 3 min
     let timerSecondsLeft = 180;
@@ -351,25 +435,32 @@
       const cards = [];
 
       const numLarge = Math.floor(Math.random() * 2) + 1; // 1 or 2 large
-      for (let i = 0; i < numLarge; i++) {
+      for (let i = 0; i < numLarge && cards.length < numCount; i++) {
         cards.push(largePool[Math.floor(Math.random() * largePool.length)]);
       }
-      while (cards.length < 6) {
+      while (cards.length < numCount) {
         cards.push(smallPool[Math.floor(Math.random() * smallPool.length)]);
       }
       return cards.sort((a, b) => a - b);
     }
 
-    /* Generate 6 numbers and find a suitable target (or best fit) requiring >= 2 distinct operations */
+    /* Fallback card sets per difficulty, in case no guaranteed game is found in time */
+    const FALLBACK_CARDS = {
+      4: [4, 7, 10, 25],
+      5: [3, 6, 9, 10, 25],
+      6: [2, 5, 7, 10, 25, 50]
+    };
+
+    /* Generate N numbers (per Schwierigkeitsgrad) and find a suitable target (or best fit) requiring >= 2 distinct operations */
     function generateGuaranteedGame() {
       for (let attempt = 0; attempt < 250; attempt++) {
         let cards = generateRandomCards();
-        // Pick a target between 120 and 890
-        let testTarget = Math.floor(Math.random() * 770) + 120;
+        // Pick a target between 150 and 350
+        let testTarget = Math.floor(Math.random() * 201) + 150;
         let sol = solveTargetWithAllNumbers(cards, testTarget);
 
         // Prefer exact or very close match (diff <= 5) AND at least 2 distinct math operators (+, -, *, /)
-        if (sol.diff <= 5 && sol.distinctOps >= 2 && sol.path.length === 5) {
+        if (sol.diff <= 5 && sol.distinctOps >= 2) {
           return {
             cards: cards,
             target: testTarget,
@@ -379,72 +470,273 @@
       }
 
       // Fallback
-      let cards = [2, 5, 7, 10, 25, 50];
-      let sol = solveTargetWithAllNumbers(cards, 342);
-      return { cards, target: 342, solution: sol };
+      let cards = FALLBACK_CARDS[numCount] || FALLBACK_CARDS[6];
+      let fallbackTarget = 250;
+      let sol = solveTargetWithAllNumbers(cards, fallbackTarget);
+      return { cards, target: fallbackTarget, solution: sol };
     }
 
     /* SOLVER ALGORITHM:
-       - Uses ALL 6 numbers
+       - Uses ALL N numbers, combined strictly as a CHAIN: first two numbers are combined,
+         then the running result is combined with each further number, one at a time
+         (this matches the classic "Rechenbaum" notation: number - number - circle - result,
+         then result - next number - circle - next result, cascading downward)
        - Prioritizes solutions with AT LEAST 2 DIFFERENT MATH OPERATIONS (+, -, *, /)
        - Finds exact or closest possible solution if exact isn't possible
     */
     function solveTargetWithAllNumbers(nums, target) {
-      let best = { diff: Infinity, path: [], val: 0, distinctOps: 0 };
+      let best = { diff: Infinity, val: 0, distinctOps: 0, tree: null };
 
-      function search(currentNums, path, usedOpsSet) {
-        // When reduced to 1 remaining number, ALL 6 numbers have been used!
-        if (currentNums.length === 1) {
-          let val = currentNums[0];
-          let diff = target !== null ? Math.abs(val - target) : 0;
-          let distinctOpsCount = usedOpsSet.size;
+      function evaluate(node, usedOpsSet) {
+        let diff = target !== null ? Math.abs(node.val - target) : 0;
+        let distinctOpsCount = usedOpsSet.size;
 
-          let isBetter = false;
-          if (diff < best.diff) {
-            isBetter = true;
-          } else if (diff === best.diff) {
-            // If diff is equal, prefer solutions with more distinct operations (at least 2)
-            if (distinctOpsCount > best.distinctOps) {
-              isBetter = true;
-            }
-          }
-
-          if (isBetter) {
-            best = { diff, path: [...path], val, distinctOps: distinctOpsCount };
-          }
-          // Stop early only if exact AND at least 2 distinct operations used
-          return target !== null && diff === 0 && distinctOpsCount >= 2;
+        let isBetter = false;
+        if (diff < best.diff) {
+          isBetter = true;
+        } else if (diff === best.diff && distinctOpsCount > best.distinctOps) {
+          isBetter = true;
         }
 
-        for (let i = 0; i < currentNums.length; i++) {
-          for (let j = i + 1; j < currentNums.length; j++) {
-            let a = currentNums[i];
-            let b = currentNums[j];
-            let nextBase = currentNums.filter((_, idx) => idx !== i && idx !== j);
+        if (isBetter) {
+          best = { diff, val: node.val, distinctOps: distinctOpsCount, tree: node };
+        }
+        // Stop early only if exact AND at least 2 distinct operations used
+        return target !== null && diff === 0 && distinctOpsCount >= 2;
+      }
 
-            let ops = [
-              { res: a + b, expr: `${a} + ${b} = ${a + b}`, symbol: '+' },
-              { res: a * b, expr: `${a} × ${b} = ${a * b}`, symbol: '*' }
-            ];
+      function combine(aNode, bNode) {
+        let a = aNode.val, b = bNode.val;
+        let combos = [
+          { res: a + b, symbol: '+', left: aNode, right: bNode },
+          { res: a * b, symbol: '*', left: aNode, right: bNode }
+        ];
+        if (a - b > 0) combos.push({ res: a - b, symbol: '-', left: aNode, right: bNode });
+        if (b - a > 0) combos.push({ res: b - a, symbol: '-', left: bNode, right: aNode });
+        if (b !== 0 && a % b === 0 && b !== 1) combos.push({ res: a / b, symbol: '/', left: aNode, right: bNode });
+        if (a !== 0 && b % a === 0 && a !== 1) combos.push({ res: b / a, symbol: '/', left: bNode, right: aNode });
+        return combos;
+      }
 
-            if (a - b > 0) ops.push({ res: a - b, expr: `${a} - ${b} = ${a - b}`, symbol: '-' });
-            if (b - a > 0) ops.push({ res: b - a, expr: `${b} - ${a} = ${b - a}`, symbol: '-' });
+      function search(remaining, accNode, usedOpsSet) {
+        if (accNode !== null && remaining.length === 0) {
+          return evaluate(accNode, usedOpsSet);
+        }
 
-            if (b !== 0 && a % b === 0 && b !== 1) ops.push({ res: a / b, expr: `${a} ÷ ${b} = ${a / b}`, symbol: '/' });
-            if (a !== 0 && b % a === 0 && a !== 1) ops.push({ res: b / a, expr: `${b} ÷ ${a} = ${b / a}`, symbol: '/' });
-
-            for (let op of ops) {
-              let nextOpsSet = new Set(usedOpsSet);
-              nextOpsSet.add(op.symbol);
-              if (search([...nextBase, op.res], [...path, op.expr], nextOpsSet)) return true;
+        if (accNode === null) {
+          // Pick the first two numbers of the chain (try every ordered pair)
+          for (let i = 0; i < remaining.length; i++) {
+            for (let j = 0; j < remaining.length; j++) {
+              if (i === j) continue;
+              let rest = remaining.filter((_, idx) => idx !== i && idx !== j);
+              for (let c of combine(remaining[i], remaining[j])) {
+                let newNode = { type: 'op', symbol: c.symbol, val: c.res, left: c.left, right: c.right };
+                let nextOps = new Set(usedOpsSet);
+                nextOps.add(c.symbol);
+                if (search(rest, newNode, nextOps)) return true;
+              }
+            }
+          }
+        } else {
+          // Combine the running chain result with one of the remaining numbers
+          for (let i = 0; i < remaining.length; i++) {
+            let rest = remaining.filter((_, idx) => idx !== i);
+            for (let c of combine(accNode, remaining[i])) {
+              let newNode = { type: 'op', symbol: c.symbol, val: c.res, left: c.left, right: c.right };
+              let nextOps = new Set(usedOpsSet);
+              nextOps.add(c.symbol);
+              if (search(rest, newNode, nextOps)) return true;
             }
           }
         }
         return false;
       }
 
-      search(nums, [], new Set());
+      let initialNodes = nums.map((n, idx) => ({ type: 'num', val: n, index: idx }));
+      search(initialNodes, null, new Set());
       return best;
+    }
+
+    /* Maps internal operator symbols to display characters */
+    function opDisplaySymbol(symbol) {
+      switch (symbol) {
+        case '+': return '+';
+        case '-': return '−';
+        case '*': return '×';
+        case '/': return '÷';
+        default: return symbol;
+      }
+    }
+
+    /* Recursively builds a fully bracketed sub-expression string for a tree node */
+    function buildExprString(node) {
+      if (node.type === 'num') return String(node.val);
+      return `(${buildExprString(node.left)} ${opDisplaySymbol(node.symbol)} ${buildExprString(node.right)})`;
+    }
+
+    /* Builds the complete term for the root node, without a redundant outer bracket */
+    function buildRootExprString(node) {
+      if (node.type === 'num') return String(node.val);
+      return `${buildExprString(node.left)} ${opDisplaySymbol(node.symbol)} ${buildExprString(node.right)}`;
+    }
+
+    /* Turns the chain tree into an ordered list of steps (first operation first).
+       Each step references the top-row leaf index/indices it consumes, so the
+       connecting lines can be drawn from the real, fixed top-row positions. */
+    function flattenChainSteps(node) {
+      if (node.left.type === 'op') {
+        let steps = flattenChainSteps(node.left);
+        steps.push({ symbol: node.symbol, resultVal: node.val, leafIndex: node.right.index });
+        return steps;
+      }
+      if (node.right.type === 'op') {
+        let steps = flattenChainSteps(node.right);
+        steps.push({ symbol: node.symbol, resultVal: node.val, leafIndex: node.left.index });
+        return steps;
+      }
+      // Base case: both children are original numbers - this is the first operation
+      return [{ symbol: node.symbol, resultVal: node.val, isFirst: true, leftIndex: node.left.index, rightIndex: node.right.index }];
+    }
+
+    /* Builds the Rechenbaum DOM: all starting numbers in one fixed row on top, plus one
+       circle + one red result box per step (absolutely positioned, placed later by
+       layoutRechenbaum). Returns the flattened step list for that positioning pass. */
+    function populateRechenbaumDom(tree) {
+      const container = document.getElementById('rbContainer');
+      const topRow = document.getElementById('rbTopRow');
+      topRow.innerHTML = '';
+      container.querySelectorAll('.rb-abs').forEach(el => el.remove());
+
+      const steps = flattenChainSteps(tree);
+
+      // List the top-row numbers in the order the chain actually consumes them,
+      // so a number used later in the calculation is placed further to the right.
+      const usageOrder = [];
+      steps.forEach(step => {
+        if (step.isFirst) {
+          usageOrder.push(step.leftIndex, step.rightIndex);
+        } else {
+          usageOrder.push(step.leafIndex);
+        }
+      });
+
+      usageOrder.forEach(idx => {
+        const box = document.createElement('div');
+        box.className = 'rb-box';
+        box.id = `rbLeaf-${idx}`;
+        box.textContent = currentCards[idx];
+        topRow.appendChild(box);
+      });
+
+      steps.forEach((step, i) => {
+        const circle = document.createElement('div');
+        circle.className = 'rb-circle rb-abs';
+        circle.id = `rbCircle-${i}`;
+        circle.textContent = opDisplaySymbol(step.symbol);
+        container.appendChild(circle);
+
+        const result = document.createElement('div');
+        result.className = 'rb-box rb-result rb-abs';
+        result.id = `rbResult-${i}`;
+        result.textContent = step.resultVal;
+        container.appendChild(result);
+      });
+
+      return steps;
+    }
+
+    const RB_ROW_STEP = 92;      // vertical distance between consecutive circle rows
+    const RB_CIRCLE_OFFSET = 36; // gap between the top row (or previous row) and a circle
+    const RB_RESULT_OFFSET = 44; // gap between a circle and its own result box
+
+    /* Positions every circle horizontally exactly between its two operands (previous
+       result and next number, or the first two numbers), one row further down each
+       step - then draws straight diagonal lines using the ACTUAL rendered positions
+       (via getBoundingClientRect), so the connections always land correctly. Must only
+       run while the container is visible (width/height > 0). */
+    function layoutRechenbaum(steps) {
+      const container = document.getElementById('rbContainer');
+      const topRow = document.getElementById('rbTopRow');
+      const svg = document.getElementById('rbSvg');
+      if (!container || !topRow || !svg || !steps || steps.length === 0) return;
+
+      const containerRect = container.getBoundingClientRect();
+      if (containerRect.width === 0) return; // container still hidden, nothing to measure yet
+
+      function centerX(el) {
+        const r = el.getBoundingClientRect();
+        return r.left + r.width / 2 - containerRect.left;
+      }
+      function topY(el) {
+        return el.getBoundingClientRect().top - containerRect.top;
+      }
+      function bottomY(el) {
+        return el.getBoundingClientRect().bottom - containerRect.top;
+      }
+
+      const leafX = {};
+      currentCards.forEach((val, idx) => {
+        leafX[idx] = centerX(document.getElementById(`rbLeaf-${idx}`));
+      });
+
+      const topRowBottom = bottomY(topRow);
+      const resultX = [];
+
+      steps.forEach((step, i) => {
+        const x = step.isFirst
+          ? (leafX[step.leftIndex] + leafX[step.rightIndex]) / 2
+          : (resultX[i - 1] + leafX[step.leafIndex]) / 2;
+        resultX.push(x);
+
+        const circleY = topRowBottom + RB_CIRCLE_OFFSET + i * RB_ROW_STEP;
+        const resultY = circleY + RB_RESULT_OFFSET;
+
+        const circleEl = document.getElementById(`rbCircle-${i}`);
+        const resultEl = document.getElementById(`rbResult-${i}`);
+        circleEl.style.left = `${x}px`;
+        circleEl.style.top = `${circleY}px`;
+        resultEl.style.left = `${x}px`;
+        resultEl.style.top = `${resultY}px`;
+      });
+
+      // Grow the container so it fully contains the (absolutely positioned) last row
+      const lastResultEl = document.getElementById(`rbResult-${steps.length - 1}`);
+      const totalHeight = bottomY(lastResultEl) + 14;
+      container.style.height = `${totalHeight}px`;
+
+      // Draw straight connecting lines now that every box has its final position
+      const width = Math.max(container.scrollWidth, containerRect.width);
+      svg.setAttribute('width', width);
+      svg.setAttribute('height', totalHeight);
+      svg.setAttribute('viewBox', `0 0 ${width} ${totalHeight}`);
+      svg.innerHTML = '';
+
+      function drawLine(fromEl, toEl) {
+        if (!fromEl || !toEl) return;
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        line.setAttribute('x1', centerX(fromEl));
+        line.setAttribute('y1', bottomY(fromEl));
+        line.setAttribute('x2', centerX(toEl));
+        line.setAttribute('y2', topY(toEl));
+        line.setAttribute('stroke', '#64748b');
+        line.setAttribute('stroke-width', '2');
+        line.setAttribute('stroke-linecap', 'round');
+        svg.appendChild(line);
+      }
+
+      steps.forEach((step, i) => {
+        const circleEl = document.getElementById(`rbCircle-${i}`);
+        const resultEl = document.getElementById(`rbResult-${i}`);
+
+        if (step.isFirst) {
+          drawLine(document.getElementById(`rbLeaf-${step.leftIndex}`), circleEl);
+          drawLine(document.getElementById(`rbLeaf-${step.rightIndex}`), circleEl);
+        } else {
+          drawLine(document.getElementById(`rbResult-${i - 1}`), circleEl);
+          drawLine(document.getElementById(`rbLeaf-${step.leafIndex}`), circleEl);
+        }
+        drawLine(circleEl, resultEl);
+      });
     }
 
     /* RENDER UI */
@@ -454,6 +746,8 @@
 
       // 2. Render Cards
       const container = document.getElementById('cardsContainer');
+      const mobileCols = numCount <= 4 ? 2 : 3;
+      container.className = `grid grid-cols-${mobileCols} sm:grid-cols-${numCount} gap-3 w-full`;
       container.innerHTML = '';
 
       currentCards.forEach(val => {
@@ -463,25 +757,66 @@
         container.appendChild(cardEl);
       });
 
-      // 3. Render Solution Steps
+      // 3. Update all texts that mention the number count
+      updateDynamicTexts();
+
+      // 4. Render Solution: complete bracketed term + Rechenbaum
       const stepsContainer = document.getElementById('solutionSteps');
       const statusEl = document.getElementById('solutionStatus');
 
-      if (currentSolution && currentSolution.path.length > 0) {
+      if (currentSolution && currentSolution.tree) {
         if (currentSolution.diff === 0) {
-          statusEl.textContent = '✅ Exakte Punktlandung (alle 6 Zahlen & mind. 2 verschiedene Rechenarten):';
+          statusEl.textContent = `✅ Exakte Punktlandung (alle ${numCount} Zahlen & mind. 2 verschiedene Rechenarten):`;
         } else {
-          statusEl.textContent = `🎯 Nächstmögliches Ziel mit allen 6 Zahlen (Ergebnis: ${currentSolution.val}, Abweichung: ${currentSolution.diff}):`;
+          statusEl.textContent = `🎯 Nächstmögliches Ziel mit allen ${numCount} Zahlen (Ergebnis: ${currentSolution.val}, Abweichung: ${currentSolution.diff}):`;
         }
 
-        stepsContainer.innerHTML = currentSolution.path.map((step, idx) => `
-          <div class="flex items-center space-x-2">
-            <span class="text-slate-500 font-sans text-xs font-bold w-5">${idx + 1}.</span>
-            <span class="text-amber-300 font-bold">${step}</span>
+        const termString = buildRootExprString(currentSolution.tree);
+
+        stepsContainer.innerHTML = `
+          <div class="mb-4">
+            <p class="text-[11px] uppercase tracking-wider text-slate-500 font-bold mb-1.5 font-sans">Vollständiger Term (mit Klammern):</p>
+            <div class="text-emerald-400 font-mono text-sm sm:text-base break-words leading-relaxed">${termString} = ${currentSolution.val}</div>
           </div>
-        `).join('');
+          <div>
+            <p class="text-[11px] uppercase tracking-wider text-slate-500 font-bold mb-2 font-sans">Rechenbaum:</p>
+            <div class="overflow-x-auto pb-1">
+              <div id="rbContainer" class="rb-container">
+                <div id="rbTopRow" class="rb-top-row"></div>
+                <svg id="rbSvg" class="rb-svg"></svg>
+              </div>
+            </div>
+          </div>
+        `;
+        currentRbSteps = populateRechenbaumDom(currentSolution.tree);
       } else {
         stepsContainer.innerHTML = '<span class="text-slate-400 italic">Keine Lösung berechenbar.</span>';
+        currentRbSteps = [];
+      }
+    }
+
+    /* Refreshes all texts in the UI that mention the current Schwierigkeitsgrad number count */
+    function updateDynamicTexts() {
+      document.getElementById('ruleText').textContent = `Regel: Nutzen Sie alle ${numCount} Zahlen & mind. 2 verschiedene Rechenzeichen!`;
+      document.getElementById('targetCountText').textContent = numCount;
+      document.getElementById('cardsCountText').textContent = numCount;
+      document.getElementById('solutionCountText').textContent = numCount;
+    }
+
+    /* DIFFICULTY SELECTION */
+    function setDifficulty(count) {
+      const changed = numCount !== count;
+      numCount = count;
+      [4, 5, 6].forEach(c => {
+        const btn = document.getElementById(`diffBtn${c}`);
+        if (c === count) {
+          btn.className = 'flex-1 py-2.5 bg-amber-500 border border-amber-400 rounded-xl font-bold text-slate-950 text-xs transition';
+        } else {
+          btn.className = 'flex-1 py-2.5 bg-slate-800 border border-slate-700 rounded-xl font-bold hover:border-amber-400 text-slate-300 text-xs transition';
+        }
+      });
+      if (changed) {
+        generateNewGame();
       }
     }
 
@@ -496,6 +831,8 @@
         eyeIcon.className = 'fa-solid fa-eye-slash';
         btnText.textContent = 'Lösung ausblenden';
         playSound(600, 0.1);
+        // Positions/lines can only be measured once the container is actually visible/laid out
+        requestAnimationFrame(() => layoutRechenbaum(currentRbSteps));
       } else {
         hideSolution();
       }
@@ -637,6 +974,13 @@
         toast.classList.add('translate-y-20', 'opacity-0');
       }, 2500);
     }
+
+    window.addEventListener('resize', () => {
+      const box = document.getElementById('solutionBox');
+      if (box && !box.classList.contains('hidden')) {
+        layoutRechenbaum(currentRbSteps);
+      }
+    });
 
     window.onload = function() {
       generateNewGame();

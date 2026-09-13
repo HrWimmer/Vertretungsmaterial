@@ -89,6 +89,9 @@
             <button onclick="openTeamModal()" class="flex items-center space-x-1.5 px-3 py-2 bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
                 <span>⚙️</span> <span>Teams</span>
             </button>
+            <button onclick="startGame()" class="flex items-center space-x-1.5 px-3 py-2 bg-amber-600/70 hover:bg-amber-500 border border-amber-400/40 rounded-xl text-xs md:text-sm font-semibold transition" title="Reihenfolge auslosen &amp; Spiel starten">
+                <span>▶️</span> <span>Start</span>
+            </button>
             <button onclick="confirmReset()" class="flex items-center space-x-1.5 px-3 py-2 bg-red-900/60 hover:bg-red-800 border border-red-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
                 <span>🔄</span> <span>Neu</span>
             </button>
@@ -121,15 +124,21 @@
             
             <!-- Modal Header -->
             <div class="flex justify-between items-center mb-4 border-b border-blue-800/60 pb-3">
-                <div class="flex items-center space-x-3">
+                <div class="flex items-center flex-wrap gap-2">
                     <span id="modalCategory" class="px-3 py-1 bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 rounded-full text-xs md:text-sm font-bold uppercase tracking-wider">
                         Kategorie
                     </span>
                     <span id="modalPoints" class="px-3 py-1 bg-blue-600/30 text-blue-200 border border-blue-400/40 rounded-full text-xs md:text-sm font-extrabold">
                         300 Punkte
                     </span>
+                    <span id="currentTurnBadge" class="hidden px-3 py-1 bg-indigo-500/20 text-indigo-200 border border-indigo-400/40 rounded-full text-xs md:text-sm font-extrabold">
+                        🎯 Team ist dran
+                    </span>
                     <span id="dailyDoubleBadge" class="hidden px-3 py-1 bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold text-xs md:text-sm rounded-full animate-pulse shadow-lg">
                         🔥 JOKER-FRAGE (Doppelte Punkte!)
+                    </span>
+                    <span id="instantPointsBadge" class="hidden px-3 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-extrabold text-xs md:text-sm rounded-full animate-pulse shadow-lg">
+                        🎁 SOFORT-PUNKTE-FELD!
                     </span>
                 </div>
                 <button onclick="closeQuestionModal()" class="text-gray-400 hover:text-white text-2xl font-bold px-2 py-1">
@@ -283,6 +292,12 @@
                 </button>
             </div>
         </div>
+    </div>
+
+    <!-- Toast Notification (z.B. für "Team ist dran") -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl text-xs md:text-sm font-semibold flex items-center gap-2 border border-yellow-500/40 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <span id="toastIcon">🔔</span>
+        <span id="toastMsg">Meldung</span>
     </div>
 
     <script>
@@ -619,22 +634,83 @@
             ],
             usedQuestions: new Set(),
             currentQ: null,
-            dailyDoubleCoords: null,
+            dailyDoubleCoords: new Set(),
+            instantPointsCoords: new Set(),
             timerInterval: null,
-            timeLeft: 30
+            timeLeft: 30,
+            gameStarted: false,
+            turnOrder: [],
+            turnIndex: 0
         };
 
         /* Initialize Game on Load */
         window.onload = function() {
-            setRandomDailyDouble();
+            setRandomSpecialFields();
             renderScoreboard();
             renderGameBoard();
         };
 
-        function setRandomDailyDouble() {
-            const catIdx = Math.floor(Math.random() * jeopardyData.length);
-            const qIdx = Math.floor(Math.random() * 3) + 2; // 300, 400 or 500 pts
-            gameState.dailyDoubleCoords = `${catIdx}-${qIdx}`;
+        /* TEAM TURN ROTATION: bei "Start" wird eine zufällige Reihenfolge ausgelost;
+           sobald eine Frage abgeschlossen ist, rückt automatisch das nächste Team nach;
+           war jedes Team einmal dran, wird für die nächste Runde neu ausgelost. */
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function generateNewTurnOrder() {
+            gameState.turnOrder = shuffleArray(gameState.teams.map((_, idx) => idx));
+            gameState.turnIndex = 0;
+        }
+
+        function startGame() {
+            if (gameState.teams.length < 2) {
+                showToast('Mindestens 2 Teams nötig, um zu starten!', 'fa-triangle-exclamation');
+                return;
+            }
+            sound.playDailyDouble();
+            generateNewTurnOrder();
+            gameState.gameStarted = true;
+            renderScoreboard();
+            announceCurrentTurn();
+        }
+
+        function advanceTurn() {
+            if (!gameState.gameStarted || gameState.turnOrder.length === 0) return;
+            gameState.turnIndex++;
+            if (gameState.turnIndex >= gameState.turnOrder.length) {
+                generateNewTurnOrder();
+            }
+            renderScoreboard();
+            announceCurrentTurn();
+        }
+
+        function announceCurrentTurn() {
+            if (!gameState.gameStarted || gameState.turnOrder.length === 0) return;
+            const team = gameState.teams[gameState.turnOrder[gameState.turnIndex]];
+            if (team) {
+                showToast(`🎯 ${team.name} ist dran!`, 'fa-bullseye');
+            }
+        }
+
+        function setRandomSpecialFields() {
+            const candidates = [];
+            jeopardyData.forEach((cat, catIdx) => {
+                for (let qIdx = 2; qIdx < cat.questions.length; qIdx++) { // 300, 400 or 500 pts
+                    candidates.push(`${catIdx}-${qIdx}`);
+                }
+            });
+            for (let i = candidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+            }
+            // 4 Joker-Felder (doppelte Punkte) + 2 Sofortpunkte-Felder
+            gameState.dailyDoubleCoords = new Set(candidates.slice(0, 4));
+            gameState.instantPointsCoords = new Set(candidates.slice(4, 6));
         }
 
         function renderGameBoard() {
@@ -685,8 +761,10 @@
 
             gameState.teams.forEach((team, idx) => {
                 const teamCard = document.createElement('div');
-                teamCard.className = `bg-gradient-to-br ${team.color} border border-white/20 rounded-2xl p-3 shadow-lg flex flex-col justify-between relative overflow-hidden`;
+                const isCurrentTurn = gameState.gameStarted && gameState.turnOrder[gameState.turnIndex] === idx;
+                teamCard.className = `bg-gradient-to-br ${team.color} border-2 ${isCurrentTurn ? 'border-yellow-300 ring-4 ring-yellow-300/40' : 'border-white/20'} rounded-2xl p-3 shadow-lg flex flex-col justify-between relative overflow-hidden`;
                 teamCard.innerHTML = `
+                    ${isCurrentTurn ? '<div class="absolute -top-1 -right-1 bg-yellow-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-bl-lg rounded-tr-2xl shadow z-10">🎯 AM ZUG</div>' : ''}
                     <div class="flex justify-between items-center mb-1">
                         <span class="font-display font-bold text-sm md:text-base text-white truncate max-w-[120px]">${team.name}</span>
                         <div class="flex gap-1">
@@ -708,7 +786,8 @@
             const catData = jeopardyData[catIdx];
             const qData = catData.questions[qIdx];
 
-            const isDailyDouble = (gameState.dailyDoubleCoords === qKey);
+            const isDailyDouble = gameState.dailyDoubleCoords.has(qKey);
+            const isInstant = gameState.instantPointsCoords.has(qKey);
             const actualPoints = isDailyDouble ? qData.points * 2 : qData.points;
 
             gameState.currentQ = {
@@ -716,7 +795,8 @@
                 catIdx,
                 qIdx,
                 points: actualPoints,
-                qData
+                qData,
+                autoUsed: isInstant
             };
 
             document.getElementById('modalCategory').innerText = catData.category;
@@ -724,24 +804,53 @@
             document.getElementById('questionText').innerHTML = qData.q;
             document.getElementById('solutionText').innerHTML = qData.a;
 
-            // Daily Double Badge toggle
+            const turnBadge = document.getElementById('currentTurnBadge');
+            const currentTurnTeam = (gameState.gameStarted && gameState.turnOrder.length > 0)
+                ? gameState.teams[gameState.turnOrder[gameState.turnIndex]]
+                : null;
+            if (currentTurnTeam) {
+                turnBadge.textContent = `🎯 ${currentTurnTeam.name} ist dran`;
+                turnBadge.classList.remove('hidden');
+            } else {
+                turnBadge.classList.add('hidden');
+            }
+
+            // Daily Double / Sofortpunkte Badge toggle
             const ddBadge = document.getElementById('dailyDoubleBadge');
-            if (isDailyDouble) {
+            const instantBadge = document.getElementById('instantPointsBadge');
+            if (isInstant) {
+                ddBadge.classList.add('hidden');
+                instantBadge.classList.remove('hidden');
+                sound.playDailyDouble();
+            } else if (isDailyDouble) {
                 ddBadge.classList.remove('hidden');
+                instantBadge.classList.add('hidden');
                 sound.playDailyDouble();
             } else {
                 ddBadge.classList.add('hidden');
+                instantBadge.classList.add('hidden');
             }
 
             // Reset modal state
             document.getElementById('solutionBox').classList.add('hidden');
-            document.getElementById('awardSection').classList.add('hidden');
-            document.getElementById('showSolutionBtn').classList.remove('hidden');
             document.getElementById('timerContainer').classList.add('hidden');
             resetTimer();
 
             // Render Team Award Buttons
             renderAwardButtons(actualPoints);
+
+            if (isInstant) {
+                // Sofort-Punkte-Feld: keine Frage, Punkte werden direkt vergeben
+                document.getElementById('questionText').classList.add('hidden');
+                document.getElementById('showSolutionBtn').classList.add('hidden');
+                document.getElementById('startTimerBtn').classList.add('hidden');
+                document.getElementById('awardSection').classList.remove('hidden');
+            } else {
+                document.getElementById('questionText').classList.remove('hidden');
+                document.getElementById('showSolutionBtn').classList.remove('hidden');
+                document.getElementById('startTimerBtn').classList.remove('hidden');
+                document.getElementById('awardSection').classList.add('hidden');
+            }
 
             document.getElementById('questionModal').classList.remove('hidden');
         }
@@ -770,7 +879,6 @@
         function awardPoints(teamIdx, points) {
             sound.playCorrect();
             gameState.teams[teamIdx].score += points;
-            markQuestionAsUsed();
             closeQuestionModal();
             renderScoreboard();
             checkGameCompletion();
@@ -783,19 +891,24 @@
         }
 
         function markQuestionAsUsed() {
-            if (gameState.currentQ) {
+            if (gameState.currentQ && !gameState.usedQuestions.has(gameState.currentQ.key)) {
                 gameState.usedQuestions.add(gameState.currentQ.key);
                 renderGameBoard();
+                try {
+                    advanceTurn();
+                } catch (e) {
+                    console.error('Fehler beim Weiterschalten der Team-Reihenfolge:', e);
+                }
             }
         }
 
         function closeQuestionModal() {
-            stopTimer();
-            if (gameState.currentQ && !document.getElementById('solutionBox').classList.contains('hidden')) {
-                gameState.usedQuestions.add(gameState.currentQ.key);
-                renderGameBoard();
-            }
+            // Fenster IMMER sofort schließen, unabhängig davon, was danach passiert
             document.getElementById('questionModal').classList.add('hidden');
+            stopTimer();
+            if (gameState.currentQ && (gameState.currentQ.autoUsed || !document.getElementById('solutionBox').classList.contains('hidden'))) {
+                markQuestionAsUsed();
+            }
         }
 
         function startTimer() {
@@ -904,6 +1017,10 @@
         function saveTeams() {
             sound.playClick();
             syncCurrentTeamInputs();
+            if (gameState.gameStarted) {
+                gameState.gameStarted = false;
+                showToast('Teams geändert – bitte "Start" erneut drücken, um die Reihenfolge neu auszulosen.', 'fa-triangle-exclamation');
+            }
             renderScoreboard();
             closeTeamModal();
         }
@@ -976,11 +1093,35 @@
             sound.playClick();
             gameState.usedQuestions.clear();
             gameState.teams.forEach(t => t.score = 0);
-            setRandomDailyDouble();
+            gameState.gameStarted = false;
+            gameState.turnOrder = [];
+            gameState.turnIndex = 0;
+            setRandomSpecialFields();
             renderScoreboard();
             renderGameBoard();
             closeResetModal();
             closeVictory();
+        }
+
+        /* Toast Notification Helper (u.a. für "Team ist dran"-Meldungen) */
+        function showToast(msg, icon) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            const iconMap = {
+                'fa-triangle-exclamation': '⚠️',
+                'fa-bullseye': '🎯'
+            };
+            document.getElementById('toastMsg').textContent = msg;
+            document.getElementById('toastIcon').textContent = iconMap[icon] || '🔔';
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(showToast._hideTimer);
+            showToast._hideTimer = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2800);
         }
 
         function toggleFullscreen() {

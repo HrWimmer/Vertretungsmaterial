@@ -325,7 +325,18 @@
           <!-- Student Total Sum Input Line -->
           <div class="w-full max-w-xs sm:max-w-md mt-3">
             <label class="block text-xs font-bold text-slate-600 mb-1">Deine berechnete Gesamtsumme:</label>
-            <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="userTotalInput" class="w-full h-14 sm:h-16 text-center bg-white border-2 border-indigo-500 rounded-xl text-3xl sm:text-4xl font-extrabold font-heading text-indigo-900 shadow-sm focus:ring-4 focus:ring-indigo-200 outline-none" placeholder="z. B. 1012">
+            <div class="grid grid-cols-4 gap-2 sm:gap-3 text-center text-xs font-bold text-slate-500 mb-1">
+              <span class="text-red-500 font-bold">T</span>
+              <span>H</span>
+              <span>Z</span>
+              <span>E</span>
+            </div>
+            <div class="grid grid-cols-4 gap-2 sm:gap-3">
+              <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="total-0" oninput="handleTotalInput(0)" onkeydown="handleTotalKeyDown(event, 0)" class="grid-cell-input h-14 sm:h-16 text-center bg-white border-2 border-indigo-500 rounded-xl text-2xl sm:text-3xl font-extrabold font-heading text-indigo-900 shadow-sm focus:ring-4 focus:ring-indigo-200 outline-none" placeholder="0" title="Tausender" />
+              <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="total-1" oninput="handleTotalInput(1)" onkeydown="handleTotalKeyDown(event, 1)" class="grid-cell-input h-14 sm:h-16 text-center bg-white border-2 border-indigo-500 rounded-xl text-2xl sm:text-3xl font-extrabold font-heading text-indigo-900 shadow-sm focus:ring-4 focus:ring-indigo-200 outline-none" placeholder="0" title="Hunderter" />
+              <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="total-2" oninput="handleTotalInput(2)" onkeydown="handleTotalKeyDown(event, 2)" class="grid-cell-input h-14 sm:h-16 text-center bg-white border-2 border-indigo-500 rounded-xl text-2xl sm:text-3xl font-extrabold font-heading text-indigo-900 shadow-sm focus:ring-4 focus:ring-indigo-200 outline-none" placeholder="0" title="Zehner" />
+              <input type="text" inputmode="numeric" pattern="[0-9]*" maxlength="1" id="total-3" oninput="handleTotalInput(3)" onkeydown="handleTotalKeyDown(event, 3)" class="grid-cell-input h-14 sm:h-16 text-center bg-white border-2 border-indigo-500 rounded-xl text-2xl sm:text-3xl font-extrabold font-heading text-indigo-900 shadow-sm focus:ring-4 focus:ring-indigo-200 outline-none" placeholder="0" title="Einer" />
+            </div>
           </div>
         </div>
       </div>
@@ -635,8 +646,48 @@
       if (document.getElementById('user-carry-1000')) document.getElementById('user-carry-1000').value = '';
       if (document.getElementById('user-carry-100')) document.getElementById('user-carry-100').value = '';
       if (document.getElementById('user-carry-10')) document.getElementById('user-carry-10').value = '';
-      document.getElementById('userTotalInput').value = '';
+      for (let i = 0; i < 4; i++) {
+        document.getElementById(`total-${i}`).value = '';
+      }
       showToast('Spielfeld geleert', 'fa-trash-can');
+    }
+
+    /* TOTAL SUM INPUT HANDLING (T / H / Z / E) */
+    function handleTotalInput(index) {
+      const cell = document.getElementById(`total-${index}`);
+      let val = cell.value.trim();
+
+      // Only allow single digits 0-9
+      if (val !== '' && (!/^[0-9]$/.test(val))) {
+        cell.value = '';
+        showToast('Nur Ziffern von 0 bis 9 erlaubt!', 'fa-triangle-exclamation');
+        return;
+      }
+
+      // Auto advance to next cell if a digit was entered
+      if (val !== '' && index < 3) {
+        const nextCell = document.getElementById(`total-${index + 1}`);
+        if (nextCell) nextCell.focus();
+      }
+    }
+
+    function handleTotalKeyDown(e, index) {
+      if (e.key === 'ArrowRight' || e.key === 'Tab') {
+        if (index < 3) {
+          e.preventDefault();
+          document.getElementById(`total-${index + 1}`).focus();
+        }
+      } else if (e.key === 'ArrowLeft') {
+        if (index > 0) {
+          e.preventDefault();
+          document.getElementById(`total-${index - 1}`).focus();
+        }
+      } else if (e.key === 'Backspace' && document.getElementById(`total-${index}`).value === '') {
+        if (index > 0) {
+          e.preventDefault();
+          document.getElementById(`total-${index - 1}`).focus();
+        }
+      }
     }
 
     /* QR CODE MODAL LOGIC */
