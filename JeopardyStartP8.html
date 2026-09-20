@@ -1,0 +1,1155 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Physik Jeopardy – Start 8. Klasse Gymnasium Bayern</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600;700&family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Fredoka', 'sans-serif'],
+                    },
+                    colors: {
+                        jeopardy: {
+                            blue: '#060ce9',
+                            darkblue: '#02025e',
+                            gold: '#ffcc00',
+                            accent: '#3366ff',
+                            card: '#111827'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #02023a 0%, #0a0b2e 50%, #00001a 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            user-select: none;
+        }
+        .text-shadow-gold {
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.6), 2px 2px 4px rgba(0,0,0,0.8);
+        }
+        .card-flip {
+            transition: transform 0.4s ease, box-shadow 0.3s ease;
+        }
+        .card-flip:hover:not(.disabled) {
+            transform: scale(1.03);
+            box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+        }
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0a0b2e;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ffcc00;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="flex flex-col min-h-screen font-sans p-2 md:p-4">
+    <a href="index.html" style="position:fixed;top:12px;left:12px;z-index:9999;background:rgba(15,23,42,0.85);color:#fff;padding:8px 14px;border-radius:999px;font-family:sans-serif;font-size:14px;text-decoration:none;border:1px solid rgba(255,255,255,0.25);box-shadow:0 2px 8px rgba(0,0,0,0.3);">← Menü</a>
+
+    <!-- Header Controls & Title -->
+    <header class="flex flex-wrap justify-between items-center bg-black/40 backdrop-blur border border-yellow-500/30 rounded-2xl p-3 md:p-4 mb-4 gap-3 shadow-xl">
+        <div class="flex items-center space-x-3">
+            <span class="text-3xl md:text-4xl">⚡</span>
+            <div>
+                <h1 class="font-display text-2xl md:text-3xl font-bold text-yellow-400 tracking-wide text-shadow-gold">
+                    PHYSIK JEOPARDY
+                </h1>
+                <p class="text-xs md:text-sm text-blue-200 font-medium">
+                    Start 8. Klasse • Wiederholung aus Klasse 7 (NuT-Physik) • LehrplanPLUS Gymnasium Bayern
+                </p>
+            </div>
+        </div>
+
+        <!-- Action Toolbar -->
+        <div class="flex flex-wrap items-center gap-2">
+            <button onclick="toggleAudio()" id="audioBtn" class="flex items-center space-x-1.5 px-3 py-2 bg-blue-900/60 hover:bg-blue-800 border border-blue-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span id="audioIcon">🔊</span> <span id="audioText">Ton An</span>
+            </button>
+            <button onclick="openTeacherSheet()" class="flex items-center space-x-1.5 px-3 py-2 bg-purple-900/60 hover:bg-purple-800 border border-purple-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span>📑</span> <span>Spickzettel</span>
+            </button>
+            <button onclick="openTeamModal()" class="flex items-center space-x-1.5 px-3 py-2 bg-emerald-900/60 hover:bg-emerald-800 border border-emerald-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span>⚙️</span> <span>Teams</span>
+            </button>
+            <button onclick="startGame()" class="flex items-center space-x-1.5 px-3 py-2 bg-amber-600/70 hover:bg-amber-500 border border-amber-400/40 rounded-xl text-xs md:text-sm font-semibold transition" title="Reihenfolge auslosen &amp; Spiel starten">
+                <span>▶️</span> <span>Start</span>
+            </button>
+            <button onclick="confirmReset()" class="flex items-center space-x-1.5 px-3 py-2 bg-red-900/60 hover:bg-red-800 border border-red-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span>🔄</span> <span>Neu</span>
+            </button>
+            <button onclick="toggleFullscreen()" class="flex items-center space-x-1.5 px-3 py-2 bg-yellow-600/60 hover:bg-yellow-500 border border-yellow-400/40 rounded-xl text-xs md:text-sm font-semibold transition">
+                <span>⛶</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- Team Scoreboard Section -->
+    <section id="scoreboard" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 md:gap-3 mb-4">
+        <!-- Team cards generated dynamically -->
+    </section>
+
+    <!-- Main Game Matrix -->
+    <main class="flex-grow flex flex-col justify-center overflow-x-auto py-2">
+        <div id="gameBoard" class="grid gap-1.5 md:gap-3 w-full h-full min-w-[1400px] lg:min-w-0">
+            <!-- Categories and Cards will be generated by JS -->
+        </div>
+    </main>
+
+    <!-- Footer Status -->
+    <footer class="mt-4 text-center text-xs text-blue-300/70 py-2">
+        Bayerischer LehrplanPLUS • Gymnasium Jgst. 8 Physik (Einstieg ins Schuljahr – Vorwissen aus Klasse 7 NuT-Physik)
+    </footer>
+
+    <!-- Modal: Question Display -->
+    <div id="questionModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex flex-col items-center justify-center p-4 md:p-8">
+        <div class="bg-gradient-to-b from-blue-950 to-slate-900 border-2 border-yellow-400/60 rounded-3xl max-w-4xl w-full p-6 md:p-8 shadow-2xl relative flex flex-col max-h-[90vh] overflow-y-auto">
+
+            <!-- Modal Header -->
+            <div class="flex justify-between items-center mb-4 border-b border-blue-800/60 pb-3">
+                <div class="flex items-center flex-wrap gap-2">
+                    <span id="modalCategory" class="px-3 py-1 bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 rounded-full text-xs md:text-sm font-bold uppercase tracking-wider">
+                        Kategorie
+                    </span>
+                    <span id="modalPoints" class="px-3 py-1 bg-blue-600/30 text-blue-200 border border-blue-400/40 rounded-full text-xs md:text-sm font-extrabold">
+                        300 Punkte
+                    </span>
+                    <span id="currentTurnBadge" class="hidden px-3 py-1 bg-indigo-500/20 text-indigo-200 border border-indigo-400/40 rounded-full text-xs md:text-sm font-extrabold">
+                        🎯 Team ist dran
+                    </span>
+                    <span id="dailyDoubleBadge" class="hidden px-3 py-1 bg-gradient-to-r from-red-500 to-amber-500 text-white font-extrabold text-xs md:text-sm rounded-full animate-pulse shadow-lg">
+                        🔥 JOKER-FRAGE (Doppelte Punkte!)
+                    </span>
+                    <span id="instantPointsBadge" class="hidden px-3 py-1 bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-extrabold text-xs md:text-sm rounded-full animate-pulse shadow-lg">
+                        🎁 SOFORT-PUNKTE-FELD!
+                    </span>
+                </div>
+                <button onclick="closeQuestionModal()" class="text-gray-400 hover:text-white text-2xl font-bold px-2 py-1">
+                    ✕
+                </button>
+            </div>
+
+            <!-- Timer Display Bar -->
+            <div id="timerContainer" class="w-full bg-slate-800 rounded-full h-2.5 mb-6 overflow-hidden hidden">
+                <div id="timerBar" class="bg-gradient-to-r from-emerald-400 via-yellow-400 to-red-500 h-2.5 rounded-full transition-all duration-1000 ease-linear w-full"></div>
+            </div>
+
+            <!-- Question Task Container -->
+            <div class="my-auto py-4 text-center">
+                <div id="questionText" class="text-xl md:text-3xl font-semibold text-white leading-relaxed md:leading-loose">
+                    Fragetext lädt...
+                </div>
+
+                <!-- Solution Box (Initially hidden) -->
+                <div id="solutionBox" class="hidden mt-6 p-4 md:p-6 bg-emerald-950/60 border border-emerald-500/50 rounded-2xl text-left transition-all">
+                    <div class="text-xs uppercase font-bold text-emerald-400 mb-1 tracking-widest">
+                        ✓ Richtige Lösung & Erklärung:
+                    </div>
+                    <div id="solutionText" class="text-lg md:text-2xl font-bold text-emerald-100 leading-normal">
+                        Lösungstext...
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Controls -->
+            <div class="mt-6 pt-4 border-t border-blue-800/60 flex flex-col gap-4">
+                <div class="flex flex-wrap justify-center gap-3">
+                    <button id="showSolutionBtn" onclick="revealSolution()" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-amber-600 hover:from-yellow-400 hover:to-amber-500 text-slate-950 font-extrabold rounded-xl text-base shadow-lg transition transform hover:scale-105">
+                        💡 Lösung anzeigen
+                    </button>
+                    <button id="startTimerBtn" onclick="startTimer()" class="px-4 py-3 bg-blue-800 hover:bg-blue-700 text-white font-bold rounded-xl text-sm transition flex items-center space-x-1">
+                        ⏱️ <span>30s Timer</span>
+                    </button>
+                </div>
+
+                <!-- Award Points to Team Section -->
+                <div id="awardSection" class="hidden flex flex-col items-center gap-2 pt-2 border-t border-blue-900/50">
+                    <span class="text-xs text-blue-200 font-semibold uppercase tracking-wider">
+                        Punkte vergeben an:
+                    </span>
+                    <div id="awardTeamButtons" class="flex flex-wrap justify-center gap-2">
+                        <!-- Dynamic team buttons inserted here -->
+                    </div>
+                    <button onclick="closeQuestionModal()" class="mt-2 text-xs text-gray-400 hover:text-gray-200 underline">
+                        Keine Punkte vergeben / Schließen
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Modal: Teams Config -->
+    <div id="teamModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-blue-500/40 rounded-3xl max-w-md w-full p-6 shadow-2xl">
+            <h2 class="font-display text-2xl font-bold text-yellow-400 mb-4 flex items-center gap-2">
+                👥 Teams verwalten
+            </h2>
+
+            <div class="space-y-4 mb-6">
+                <div id="teamInputs" class="space-y-3">
+                    <!-- Dynamic Team Inputs -->
+                </div>
+            </div>
+
+            <div class="flex justify-between items-center pt-3 border-t border-slate-800">
+                <button onclick="addTeamInput()" class="px-3 py-2 bg-blue-900/80 hover:bg-blue-800 text-blue-200 rounded-xl text-xs font-bold transition">
+                    + Team hinzufügen
+                </button>
+                <div class="space-x-2">
+                    <button onclick="closeTeamModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-gray-300 rounded-xl text-sm font-semibold">
+                        Abbrechen
+                    </button>
+                    <button onclick="saveTeams()" class="px-5 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-bold rounded-xl text-sm shadow">
+                        Speichern
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Teacher Cheat-Sheet / Print View -->
+    <div id="teacherSheetModal" class="fixed inset-0 bg-black/90 backdrop-blur-md z-50 hidden flex items-center justify-center p-4 md:p-8">
+        <div class="bg-slate-900 border border-purple-500/40 rounded-3xl max-w-5xl w-full p-6 md:p-8 shadow-2xl flex flex-col max-h-[90vh]">
+            <div class="flex justify-between items-center mb-4 border-b border-slate-800 pb-3">
+                <h2 class="font-display text-2xl font-bold text-purple-300 flex items-center gap-2">
+                    📑 Lehrer-Spickzettel & Musterlösungen
+                </h2>
+                <button onclick="closeTeacherSheet()" class="text-gray-400 hover:text-white text-2xl font-bold px-2">✕</button>
+            </div>
+
+            <div class="overflow-y-auto flex-grow pr-2 space-y-6" id="teacherSheetContent">
+                <!-- Dynamically filled with all Q&A -->
+            </div>
+
+            <div class="mt-4 pt-3 border-t border-slate-800 flex justify-end">
+                <button onclick="closeTeacherSheet()" class="px-6 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-sm">
+                    Schließen
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Victory Overlay Screen -->
+    <div id="victoryOverlay" class="fixed inset-0 bg-black/95 backdrop-blur-lg z-50 hidden flex flex-col items-center justify-center p-6 text-center">
+        <canvas id="fireworksCanvas" class="absolute inset-0 pointer-events-none"></canvas>
+        <div class="relative z-10 max-w-2xl bg-slate-900/80 border-2 border-yellow-400 p-8 rounded-3xl shadow-2xl">
+            <span class="text-6xl animate-bounce block mb-4">🏆</span>
+            <h2 class="font-display text-3xl md:text-5xl font-extrabold text-yellow-400 text-shadow-gold mb-2">
+                SPIEL BEENDET!
+            </h2>
+            <p class="text-blue-200 text-lg mb-6">Herzlichen Glückwunsch an das Gewinner-Team!</p>
+
+            <div id="winnerText" class="text-2xl md:text-4xl font-extrabold text-emerald-400 mb-8">
+                Team Name - 0 Punkte
+            </div>
+
+            <div class="flex justify-center gap-4">
+                <button onclick="closeVictory()" class="px-6 py-3 bg-yellow-500 hover:bg-yellow-400 text-slate-950 font-extrabold rounded-2xl text-base shadow-xl">
+                    Ergebnisse ansehen
+                </button>
+                <button onclick="confirmReset()" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold rounded-2xl text-base shadow-xl">
+                    Neues Spiel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Reset Confirmation -->
+    <div id="resetModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-red-500/40 rounded-3xl max-w-md w-full p-6 shadow-2xl text-center">
+            <span class="text-4xl block mb-2">🔄</span>
+            <h2 class="font-display text-2xl font-bold text-yellow-400 mb-2">
+                Neues Spiel starten?
+            </h2>
+            <p class="text-blue-200 text-sm mb-6">
+                Möchtest du das Jeopardy-Spiel wirklich zurücksetzen? Alle Punkte und aufgedeckte Karten gehen verloren.
+            </p>
+
+            <div class="flex justify-center gap-3">
+                <button onclick="closeResetModal()" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-gray-300 rounded-xl text-sm font-semibold">
+                    Abbrechen
+                </button>
+                <button onclick="executeReset()" class="px-5 py-2.5 bg-red-600 hover:bg-red-500 text-white font-bold rounded-xl text-sm shadow">
+                    Ja, Neustart
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification (z.B. für "Team ist dran") -->
+    <div id="toast" class="fixed bottom-5 right-5 bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl text-xs md:text-sm font-semibold flex items-center gap-2 border border-yellow-500/40 transform translate-y-20 opacity-0 transition-all duration-300 z-50">
+        <span id="toastIcon">🔔</span>
+        <span id="toastMsg">Meldung</span>
+    </div>
+
+    <script>
+        /* Web Audio API Sound Generator (No external files required) */
+        class SoundEngine {
+            constructor() {
+                this.ctx = null;
+                this.muted = false;
+            }
+
+            init() {
+                if (!this.ctx) {
+                    const AudioContext = window.AudioContext || window.webkitAudioContext;
+                    if (AudioContext) this.ctx = new AudioContext();
+                }
+            }
+
+            playTone(freq, type = 'sine', duration = 0.2, startDelay = 0) {
+                if (this.muted) return;
+                this.init();
+                if (!this.ctx) return;
+
+                setTimeout(() => {
+                    try {
+                        const osc = this.ctx.createOscillator();
+                        const gain = this.ctx.createGain();
+                        osc.type = type;
+                        osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                        gain.gain.setValueAtTime(0.15, this.ctx.currentTime);
+                        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration);
+                        osc.connect(gain);
+                        gain.connect(this.ctx.destination);
+                        osc.start();
+                        osc.stop(this.ctx.currentTime + duration);
+                    } catch(e){}
+                }, startDelay * 1000);
+            }
+
+            playCorrect() {
+                this.playTone(523.25, 'triangle', 0.15, 0);   // C5
+                this.playTone(659.25, 'triangle', 0.15, 0.12); // E5
+                this.playTone(783.99, 'triangle', 0.15, 0.24); // G5
+                this.playTone(1046.50, 'triangle', 0.3, 0.36); // C6
+            }
+
+            playWrong() {
+                this.playTone(220, 'sawtooth', 0.2, 0);
+                this.playTone(185, 'sawtooth', 0.35, 0.15);
+            }
+
+            playClick() {
+                this.playTone(800, 'sine', 0.05, 0);
+            }
+
+            playTick() {
+                this.playTone(1000, 'sine', 0.03, 0);
+            }
+
+            playDailyDouble() {
+                this.playTone(440, 'square', 0.12, 0);
+                this.playTone(554.37, 'square', 0.12, 0.1);
+                this.playTone(659.25, 'square', 0.12, 0.2);
+                this.playTone(880, 'square', 0.4, 0.3);
+            }
+        }
+
+        const sound = new SoundEngine();
+
+        function toggleAudio() {
+            sound.muted = !sound.muted;
+            document.getElementById('audioIcon').innerText = sound.muted ? '🔇' : '🔊';
+            document.getElementById('audioText').innerText = sound.muted ? 'Stumm' : 'Ton An';
+        }
+
+        /* Jeopardy Game Data: Einstieg in die 8. Klasse Physik.
+           Alle Aufgaben nutzen bewusst nur Stoff aus dem Schwerpunkt Physik von
+           Natur und Technik (Jahrgangsstufe 7): Magnetismus & Erdmagnetfeld, Dichte,
+           optische Phänomene (Licht, Schatten, Sehvorgang) sowie die ersten Grundlagen
+           zu elektrischer Ladung und einfachen Stromkreisen. Drei Kategorien führen
+           gezielt auf das Startthema der 8. Klasse hin: "Elektrischer Strom"
+           (Ladung/Reibungselektrizität, Stromkreise sowie erste, alltagsnahe
+           Denkanstöße zu Antrieb/Bremswirkung im Stromkreis – die Fachbegriffe
+           Stromstärke, Spannung und Widerstand tauchen dabei bewusst nur als
+           Ausblick in den Lösungen auf, nicht als vorausgesetztes Wissen). */
+        const jeopardyData = [
+            {
+                category: "🧲 Magnetismus & Erdmagnetfeld",
+                description: "Permanentmagnete, Pole & das Magnetfeld der Erde",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Du hast vier Gegenstände: eine Büroklammer aus Eisen, eine Münze aus Kupfer, einen Löffel aus Aluminium und einen Nagel aus Eisen. Welche davon werden von einem Magneten angezogen?",
+                        a: "<b>Die Büroklammer und der Nagel (beide aus Eisen)</b><br><span class='text-sm text-emerald-300'>Kupfer und Aluminium sind nicht ferromagnetisch und werden von einem gewöhnlichen Magneten nicht angezogen.</span>"
+                    },
+                    {
+                        points: 200,
+                        q: "Ein unmagnetisierter Eisennagel wird von einem Magneten angezogen, obwohl der Nagel selbst noch keinen eigenen Nord- oder Südpol besitzt. Wie erklärt man sich das mit einem einfachen Modell?",
+                        a: "<b>Im Eisen richten sich winzige „Elementarmagnete“ durch die Nähe des Magneten so aus, dass eine anziehende Kraft entsteht – der Nagel wird dabei selbst kurzzeitig magnetisch.</b>"
+                    },
+                    {
+                        points: 300,
+                        q: "Du hast zwei unbeschriftete Stabmagnete A und B sowie einen dritten Magneten, dessen Nordpol du eindeutig kennst. Wie findest du damit heraus, welches Ende von Magnet A der Nordpol ist?",
+                        a: "<b>Du hältst den bekannten Nordpol an ein Ende von Magnet A: Stößt es ab, ist dieses Ende ebenfalls ein Nordpol; zieht es an, ist es der Südpol.</b>"
+                    },
+                    {
+                        points: 400,
+                        q: "Auch auf der Südhalbkugel der Erde (z.B. in Australien) zeigt der Nordpol einer Kompassnadel weiterhin zum geografischen Nordpol der Erde. Was verrät das darüber, wo sich der magnetische Südpol der Erde befindet?",
+                        a: "<b>Der magnetische Südpol der Erde liegt in der Nähe des geografischen Nordpols</b><br><span class='text-sm text-emerald-300'>Der Nordpol der Kompassnadel wird von einem (magnetischen) Südpol angezogen – und das ist überall auf der Erde derselbe, egal ob man auf der Nord- oder Südhalbkugel steht.</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Du zerbrichst einen Stabmagneten in drei gleich große Teile. Wie viele Pole haben diese drei Teile zusammen danach insgesamt?",
+                        a: "<b>6 Pole</b><br><span class='text-sm text-emerald-300'>Jedes der drei Teilstücke ist wieder ein vollständiger Magnet mit eigenem Nord- und Südpol (3 · 2 = 6) – einen reinen Einzelpol kann man nicht erzeugen.</span>"
+                    }
+                ]
+            },
+            {
+                category: "⚖️ Dichte, Masse & Volumen",
+                description: "Dichte berechnen & Stoffe unterscheiden",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Nenne die Formel, mit der man die Dichte ρ aus der Masse m und dem Volumen V berechnet.",
+                        a: "<b>ρ = m : V</b>"
+                    },
+                    {
+                        points: 200,
+                        q: "Ein Holzklotz hat die Masse 180 g und das Volumen 200 cm³. Berechne seine Dichte.",
+                        a: "<b>0,9 g/cm³</b><br><span class='text-sm text-emerald-300'>ρ = m : V = 180 g : 200 cm³ = 0,9 g/cm³.</span>"
+                    },
+                    {
+                        points: 300,
+                        q: "Ein Stein geht in Wasser unter, ein Korken schwimmt (Dichte von Wasser: 1 g/cm³). Was sagt das über die Dichte der beiden Stoffe im Vergleich zu Wasser aus?",
+                        a: "<b>Der Stein hat eine größere Dichte als Wasser, der Korken eine kleinere</b>"
+                    },
+                    {
+                        points: 400,
+                        q: "Ein unregelmäßig geformter Stein soll vermessen werden. Die Masse kannst du wiegen – wie bestimmst du sein Volumen, ohne es direkt mit dem Lineal zu messen?",
+                        a: "<b>Mit dem Messzylinder:</b> Der Stein wird ins Wasser getaucht, das Volumen entspricht der verdrängten Wassermenge (Wasserstand vorher/nachher vergleichen)."
+                    },
+                    {
+                        points: 500,
+                        q: "Ein Metallwürfel mit der Kantenlänge 5 cm hat eine Masse von 1000 g. Berechne seine Dichte in g/cm³.",
+                        a: "<b>8 g/cm³</b><br><span class='text-sm text-emerald-300'>V = a³ = 5³ = 125 cm³. ρ = m : V = 1000 g : 125 cm³ = 8 g/cm³ (das entspricht etwa der Dichte von Stahl).</span>"
+                    }
+                ]
+            },
+            {
+                category: "🌗 Licht, Schatten & Sehen",
+                description: "Lichtausbreitung, Schattenarten & Mondphasen",
+                questions: [
+                    {
+                        points: 100,
+                        q: "In welcher Form breitet sich Licht in einem durchsichtigen Stoff wie Luft aus?",
+                        a: "<b>Geradlinig</b> (auf geraden Linien = Lichtstrahlen)"
+                    },
+                    {
+                        points: 200,
+                        q: "Wie nennt man einen Körper, der selbst Licht aussendet, z.B. die Sonne oder eine Glühlampe?",
+                        a: "<b>Lichtquelle</b> (selbstleuchtender Körper)"
+                    },
+                    {
+                        points: 300,
+                        q: "Bei einer Sonnenfinsternis wirft der Mond einen Schatten auf die Erde. Wie heißt der Bereich, in dem die Sonne komplett verdeckt ist?",
+                        a: "<b>Kernschatten</b><br><span class='text-sm text-emerald-300'>Im Halbschatten ist die Sonne dagegen nur teilweise verdeckt.</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Warum können wir den Mond am Nachthimmel sehen, obwohl er selbst kein eigenes Licht aussendet?",
+                        a: "<b>Er reflektiert (wirft zurück) das Licht der Sonne, das auf ihn fällt</b>"
+                    },
+                    {
+                        points: 500,
+                        q: "Du stehst zwischen einer kleinen, punktförmigen Lampe und einer Wand. Was passiert mit der Größe deines Schattens an der Wand, wenn du dich näher zur Lampe bewegst?",
+                        a: "<b>Der Schatten wird größer</b><br><span class='text-sm text-emerald-300'>Da sich Licht geradlinig ausbreitet, vergrößert sich der Schattenwurf, je näher ein Gegenstand an einer (kleinen) Lichtquelle steht.</span>"
+                    }
+                ]
+            },
+            {
+                category: "⚡ Elektrische Ladung",
+                description: "Reibungselektrizität & das Kern-Hülle-Modell",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Du reibst einen Luftballon an deinem Pullover. Danach bleibt der Ballon an der Wand kleben. Wie nennt man dieses Phänomen?",
+                        a: "<b>Reibungselektrizität</b> (elektrostatische Aufladung)"
+                    },
+                    {
+                        points: 200,
+                        q: "Aus welchen drei Teilchenarten besteht ein Atom nach dem Kern-Hülle-Modell?",
+                        a: "<b>Protonen und Neutronen im Kern sowie Elektronen in der Hülle</b>"
+                    },
+                    {
+                        points: 300,
+                        q: "Ein Atom besteht aus Protonen, Neutronen und Elektronen. Welche dieser drei Teilchenarten tragen eine negative Ladung?",
+                        a: "<b>Die Elektronen</b><br><span class='text-sm text-emerald-300'>Protonen sind positiv geladen, Neutronen sind ungeladen (neutral).</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Zwei geladene Kunststoffstäbe tragen die gleiche Ladung (z.B. beide negativ). Ziehen sie sich an oder stoßen sie sich ab?",
+                        a: "<b>Sie stoßen sich ab</b><br><span class='text-sm text-emerald-300'>Gleichnamige Ladungen stoßen sich ab, ungleichnamige ziehen sich an – genau wie bei Magnetpolen.</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Elektrischer Strom in einem Metalldraht besteht aus bewegten Teilchen. Welche Teilchen bewegen sich dabei durch den Draht?",
+                        a: "<b>(Freie) Elektronen</b><br><span class='text-sm text-emerald-300'>In Metallen können sich Elektronen frei bewegen – ihr gerichteter Fluss ist der elektrische Strom. Wie man diesen Ladungsfluss genau misst (Stromstärke), lernst du gleich zu Beginn der 8. Klasse.</span>"
+                    }
+                ]
+            },
+            {
+                category: "🔦 Stromkreise bauen",
+                description: "Einfache Schaltungen, Leiter & Wirkungen des Stroms",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Nenne drei Bauteile, die ein einfacher elektrischer Stromkreis mit einer Lampe mindestens braucht.",
+                        a: "<b>Spannungsquelle (z.B. Batterie), Verbindungskabel und Verbraucher (z.B. Lampe)</b><br><span class='text-sm text-emerald-300'>Oft kommt noch ein Schalter dazu.</span>"
+                    },
+                    {
+                        points: 200,
+                        q: "Warum leuchtet eine Lampe in einem Stromkreis nicht, wenn irgendwo im Kabelweg eine Unterbrechung ist (z.B. ein offener Schalter)?",
+                        a: "<b>Weil der Stromkreis geschlossen sein muss, damit Strom fließen kann</b><br><span class='text-sm text-emerald-300'>Ein Stromkreis ist ein geschlossener Kreislauf – fehlt eine Verbindung, kann kein Strom fließen.</span>"
+                    },
+                    {
+                        points: 300,
+                        q: "Nenne ein Material, das elektrischen Strom gut leitet, und eines, das ihn (fast) nicht leitet.",
+                        a: "<b>Leiter, z.B. Kupfer/Metall – Isolator, z.B. Gummi, Kunststoff oder trockenes Holz</b>"
+                    },
+                    {
+                        points: 400,
+                        q: "Welche zwei typischen Wirkungen des elektrischen Stroms nutzt man z.B. bei einer Glühlampe bzw. einem Heizstrahler?",
+                        a: "<b>Leuchtwirkung (Glühlampe) und Wärmewirkung (Heizstrahler)</b>"
+                    },
+                    {
+                        points: 500,
+                        q: "In einem Stromkreis werden zwei Lampen hintereinander (in Reihe) angeschlossen. Was passiert mit dem Licht beider Lampen, wenn du eine der beiden Lampen herausschraubst?",
+                        a: "<b>Beide Lampen gehen aus</b><br><span class='text-sm text-emerald-300'>Bei einer Reihenschaltung gibt es nur einen Strompfad – wird er an einer Stelle unterbrochen, fließt gar kein Strom mehr. Wie sich eine Parallelschaltung dabei anders verhält, untersuchst du in der 8. Klasse genauer.</span>"
+                    }
+                ]
+            },
+            {
+                category: "🔋 Elektrizität verstehen",
+                description: "Strom, Antrieb & Bremswirkung mit eigenen Worten erklärt",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Eine Fahrradlampe leuchtet mit einer Batterie nur schwach. Baust du zwei gleiche Batterien hintereinander ein, leuchtet sie deutlich heller. Was vermutest du: Was verändert sich dadurch im Stromkreis?",
+                        a: "<b>Es fließt mehr Strom durch die Lampe.</b><br><span class='text-sm text-emerald-300'>Mit mehr Batterien wird der 'Antrieb' für den Strom größer – diesen Antrieb nennst du bald die elektrische Spannung.</span>"
+                    },
+                    {
+                        points: 200,
+                        q: "In einem Stromkreis wird ein dünnes Kabel gegen ein deutlich dickeres Kabel aus demselben Metall ausgetauscht. Was vermutest du: Fließt der Strom dadurch leichter oder schwerer?",
+                        a: "<b>Leichter</b><br><span class='text-sm text-emerald-300'>Ein dickeres Kabel bremst den Strom weniger. Diese 'Bremswirkung' eines Bauteils nennst du bald den elektrischen Widerstand.</span>"
+                    },
+                    {
+                        points: 300,
+                        q: "An einem Fahrraddynamo leuchtet die Lampe heller, je schneller du fährst (je schneller sich der Dynamo dreht). Was vermutest du: Was ändert sich dabei im Stromkreis?",
+                        a: "<b>Es fließt mehr Strom durch die Lampe.</b><br><span class='text-sm text-emerald-300'>Wie viel Strom in jeder Sekunde fließt, beschreibt später die elektrische Stromstärke.</span>"
+                    },
+                    {
+                        points: 400,
+                        q: "Verbindet man die beiden Pole einer Batterie direkt mit einem einzigen Draht (ohne Lampe dazwischen), wird der Draht sehr heiß und die Batterie ist schnell leer. Wie nennt man eine solche direkte Verbindung im Stromkreis?",
+                        a: "<b>Kurzschluss</b><br><span class='text-sm text-emerald-300'>Deshalb ist es gefährlich, die Pole einer Batterie oder Steckdose direkt mit Draht zu verbinden.</span>"
+                    },
+                    {
+                        points: 500,
+                        q: "Vögel sitzen oft auf einer einzelnen Stromleitung, ohne einen Stromschlag zu bekommen. Was vermutest du: Warum passiert dem Vogel nichts?",
+                        a: "<b>Beide Füße des Vogels berühren dasselbe Kabel – es gibt für den Strom keinen Grund, durch den Vogel statt weiter durch das Kabel zu fließen.</b><br><span class='text-sm text-emerald-300'>Würde der Vogel gleichzeitig ein zweites Kabel oder den Mast berühren, könnte Strom durch ihn hindurchfließen – das wäre gefährlich.</span>"
+                    }
+                ]
+            },
+            {
+                category: "🔬 Forschen wie ein Physiker",
+                description: "Naturwissenschaftliches Arbeiten, Messen & Sicherheit",
+                questions: [
+                    {
+                        points: 100,
+                        q: "Zu jeder physikalischen Größe (z.B. Länge, Masse, Zeit) gehört neben der Maßzahl noch etwas Zweites dazu. Wie heißt das?",
+                        a: "<b>Die Einheit</b> (z.B. m, kg, s)"
+                    },
+                    {
+                        points: 200,
+                        q: "Nenne die richtige Reihenfolge: Beobachtung, Vermutung (Hypothese), Experiment, ___.",
+                        a: "<b>Auswertung / Erklärung (Schlussfolgerung)</b>"
+                    },
+                    {
+                        points: 300,
+                        q: "Warum sollte man bei einem Experiment immer nur eine Sache (Variable) verändern und alle anderen Bedingungen gleich halten?",
+                        a: "<b>Damit man sicher erkennen kann, welche Veränderung tatsächlich die Ursache für das beobachtete Ergebnis war</b>"
+                    },
+                    {
+                        points: 400,
+                        q: "Nenne zwei wichtige Sicherheitsregeln für Experimente mit elektrischem Strom im Physik-Fachraum.",
+                        a: "<b>Z.B.: Anweisungen der Lehrkraft befolgen, Stromkreis erst nach Kontrolle einschalten, nicht mit nassen Händen experimentieren, keine Spannungsquellen kurzschließen</b>"
+                    },
+                    {
+                        points: 500,
+                        q: "Ein Schüler misst mit einem Lineal die Länge eines Tisches dreimal und erhält 120,1 cm, 119,9 cm und 120,0 cm. Wie geht man am besten mit diesen leicht unterschiedlichen Messwerten um?",
+                        a: "<b>Man bildet den Mittelwert (arithmetisches Mittel):</b> (120,1+119,9+120,0):3 = 120,0 cm<br><span class='text-sm text-emerald-300'>Mehrfachmessungen und Mittelwertbildung erhöhen die Messgenauigkeit – das brauchst du bald auch bei Strom- und Spannungsmessungen.</span>"
+                    }
+                ]
+            }
+        ];
+
+        /* State Variables */
+        let gameState = {
+            teams: [
+                { name: "Team Ampere", score: 0, color: "from-blue-600 to-indigo-700" },
+                { name: "Team Volta", score: 0, color: "from-emerald-600 to-teal-700" },
+                { name: "Team Ohm", score: 0, color: "from-amber-600 to-orange-700" },
+                { name: "Team Faraday", score: 0, color: "from-rose-600 to-pink-700" }
+            ],
+            usedQuestions: new Set(),
+            currentQ: null,
+            dailyDoubleCoords: new Set(),
+            instantPointsCoords: new Set(),
+            timerInterval: null,
+            timeLeft: 30,
+            gameStarted: false,
+            turnOrder: [],
+            turnIndex: 0
+        };
+
+        /* Initialize Game on Load */
+        window.onload = function() {
+            setRandomSpecialFields();
+            renderScoreboard();
+            renderGameBoard();
+        };
+
+        /* TEAM TURN ROTATION: bei "Start" wird eine zufällige Reihenfolge ausgelost;
+           sobald eine Frage abgeschlossen ist, rückt automatisch das nächste Team nach;
+           war jedes Team einmal dran, wird für die nächste Runde neu ausgelost. */
+        function shuffleArray(arr) {
+            const a = [...arr];
+            for (let i = a.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [a[i], a[j]] = [a[j], a[i]];
+            }
+            return a;
+        }
+
+        function generateNewTurnOrder() {
+            gameState.turnOrder = shuffleArray(gameState.teams.map((_, idx) => idx));
+            gameState.turnIndex = 0;
+        }
+
+        function startGame() {
+            if (gameState.teams.length < 2) {
+                showToast('Mindestens 2 Teams nötig, um zu starten!', 'fa-triangle-exclamation');
+                return;
+            }
+            sound.playDailyDouble();
+            generateNewTurnOrder();
+            gameState.gameStarted = true;
+            renderScoreboard();
+            announceCurrentTurn();
+        }
+
+        function advanceTurn() {
+            if (!gameState.gameStarted || gameState.turnOrder.length === 0) return;
+            gameState.turnIndex++;
+            if (gameState.turnIndex >= gameState.turnOrder.length) {
+                generateNewTurnOrder();
+            }
+            renderScoreboard();
+            announceCurrentTurn();
+        }
+
+        function announceCurrentTurn() {
+            if (!gameState.gameStarted || gameState.turnOrder.length === 0) return;
+            const team = gameState.teams[gameState.turnOrder[gameState.turnIndex]];
+            if (team) {
+                showToast(`🎯 ${team.name} ist dran!`, 'fa-bullseye');
+            }
+        }
+
+        function setRandomSpecialFields() {
+            const candidates = [];
+            jeopardyData.forEach((cat, catIdx) => {
+                for (let qIdx = 2; qIdx < cat.questions.length; qIdx++) { // 300, 400 or 500 pts
+                    candidates.push(`${catIdx}-${qIdx}`);
+                }
+            });
+            for (let i = candidates.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
+            }
+            // 4 Joker-Felder (doppelte Punkte) + 2 Sofortpunkte-Felder
+            gameState.dailyDoubleCoords = new Set(candidates.slice(0, 4));
+            gameState.instantPointsCoords = new Set(candidates.slice(4, 6));
+        }
+
+        function renderGameBoard() {
+            const board = document.getElementById('gameBoard');
+            board.innerHTML = '';
+            board.style.gridTemplateColumns = `repeat(${jeopardyData.length}, minmax(0, 1fr))`;
+
+            // Render Category Headers
+            jeopardyData.forEach((cat, cIdx) => {
+                const catHeader = document.createElement('div');
+                catHeader.className = "bg-gradient-to-b from-blue-900 to-blue-950 border-2 border-yellow-500/50 rounded-2xl p-2 md:p-3 flex flex-col justify-center items-center text-center shadow-lg min-h-[70px]";
+                catHeader.innerHTML = `
+                    <div class="font-display font-extrabold text-xs md:text-sm text-yellow-400 tracking-wide leading-tight">${cat.category}</div>
+                    <div class="text-[10px] md:text-xs text-blue-200/80 mt-1 hidden sm:block">${cat.description}</div>
+                `;
+                board.appendChild(catHeader);
+            });
+
+            // Render 5 Rows of Questions (100, 200, 300, 400, 500)
+            for (let qIdx = 0; qIdx < 5; qIdx++) {
+                for (let cIdx = 0; cIdx < jeopardyData.length; cIdx++) {
+                    const qData = jeopardyData[cIdx].questions[qIdx];
+                    const qKey = `${cIdx}-${qIdx}`;
+                    const isUsed = gameState.usedQuestions.has(qKey);
+
+                    const card = document.createElement('button');
+                    card.className = `card-flip rounded-2xl border-2 flex items-center justify-center font-display font-extrabold text-xl md:text-3xl py-4 md:py-6 shadow-md transition-all ${
+                        isUsed
+                        ? 'bg-slate-900/60 border-slate-800 text-slate-600 cursor-not-allowed disabled'
+                        : 'bg-gradient-to-b from-blue-700 to-blue-900 border-yellow-400/70 text-yellow-400 hover:text-white cursor-pointer'
+                    }`;
+
+                    if (isUsed) {
+                        card.innerHTML = `<span class="text-slate-700 text-lg md:text-2xl">✓</span>`;
+                    } else {
+                        card.innerHTML = `<span class="text-shadow-gold">${qData.points}</span>`;
+                        card.onclick = () => openQuestion(cIdx, qIdx);
+                    }
+
+                    board.appendChild(card);
+                }
+            }
+        }
+
+        function renderScoreboard() {
+            const container = document.getElementById('scoreboard');
+            container.innerHTML = '';
+
+            gameState.teams.forEach((team, idx) => {
+                const teamCard = document.createElement('div');
+                const isCurrentTurn = gameState.gameStarted && gameState.turnOrder[gameState.turnIndex] === idx;
+                teamCard.className = `bg-gradient-to-br ${team.color} border-2 ${isCurrentTurn ? 'border-yellow-300 ring-4 ring-yellow-300/40' : 'border-white/20'} rounded-2xl p-3 shadow-lg flex flex-col justify-between relative overflow-hidden`;
+                teamCard.innerHTML = `
+                    ${isCurrentTurn ? '<div class="absolute -top-1 -right-1 bg-yellow-400 text-slate-950 text-[9px] font-black px-2 py-0.5 rounded-bl-lg rounded-tr-2xl shadow z-10">🎯 AM ZUG</div>' : ''}
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="font-display font-bold text-sm md:text-base text-white truncate max-w-[120px]">${team.name}</span>
+                        <div class="flex gap-1">
+                            <button onclick="adjustScore(${idx}, -100)" class="w-6 h-6 bg-black/30 hover:bg-black/50 text-white rounded-full text-xs font-bold transition flex items-center justify-center">-</button>
+                            <button onclick="adjustScore(${idx}, 100)" class="w-6 h-6 bg-black/30 hover:bg-black/50 text-white rounded-full text-xs font-bold transition flex items-center justify-center">+</button>
+                        </div>
+                    </div>
+                    <div class="font-display text-2xl md:text-3xl font-extrabold text-yellow-300 text-shadow-gold">
+                        ${team.score} <span class="text-xs font-normal text-white/80">Pkt</span>
+                    </div>
+                `;
+                container.appendChild(teamCard);
+            });
+        }
+
+        function openQuestion(catIdx, qIdx) {
+            sound.playClick();
+            const qKey = `${catIdx}-${qIdx}`;
+            const catData = jeopardyData[catIdx];
+            const qData = catData.questions[qIdx];
+
+            const isDailyDouble = gameState.dailyDoubleCoords.has(qKey);
+            const isInstant = gameState.instantPointsCoords.has(qKey);
+            const actualPoints = isDailyDouble ? qData.points * 2 : qData.points;
+
+            gameState.currentQ = {
+                key: qKey,
+                catIdx,
+                qIdx,
+                points: actualPoints,
+                qData,
+                autoUsed: isInstant
+            };
+
+            document.getElementById('modalCategory').innerText = catData.category;
+            document.getElementById('modalPoints').innerText = `${actualPoints} Punkte`;
+            document.getElementById('questionText').innerHTML = qData.q;
+            document.getElementById('solutionText').innerHTML = qData.a;
+
+            const turnBadge = document.getElementById('currentTurnBadge');
+            const currentTurnTeam = (gameState.gameStarted && gameState.turnOrder.length > 0)
+                ? gameState.teams[gameState.turnOrder[gameState.turnIndex]]
+                : null;
+            if (currentTurnTeam) {
+                turnBadge.textContent = `🎯 ${currentTurnTeam.name} ist dran`;
+                turnBadge.classList.remove('hidden');
+            } else {
+                turnBadge.classList.add('hidden');
+            }
+
+            // Daily Double / Sofortpunkte Badge toggle
+            const ddBadge = document.getElementById('dailyDoubleBadge');
+            const instantBadge = document.getElementById('instantPointsBadge');
+            if (isInstant) {
+                ddBadge.classList.add('hidden');
+                instantBadge.classList.remove('hidden');
+                sound.playDailyDouble();
+            } else if (isDailyDouble) {
+                ddBadge.classList.remove('hidden');
+                instantBadge.classList.add('hidden');
+                sound.playDailyDouble();
+            } else {
+                ddBadge.classList.add('hidden');
+                instantBadge.classList.add('hidden');
+            }
+
+            // Reset modal state
+            document.getElementById('solutionBox').classList.add('hidden');
+            document.getElementById('timerContainer').classList.add('hidden');
+            resetTimer();
+
+            // Render Team Award Buttons
+            renderAwardButtons(actualPoints);
+
+            if (isInstant) {
+                // Sofort-Punkte-Feld: keine Frage, Punkte werden direkt vergeben
+                document.getElementById('questionText').classList.add('hidden');
+                document.getElementById('showSolutionBtn').classList.add('hidden');
+                document.getElementById('startTimerBtn').classList.add('hidden');
+                document.getElementById('awardSection').classList.remove('hidden');
+            } else {
+                document.getElementById('questionText').classList.remove('hidden');
+                document.getElementById('showSolutionBtn').classList.remove('hidden');
+                document.getElementById('startTimerBtn').classList.remove('hidden');
+                document.getElementById('awardSection').classList.add('hidden');
+            }
+
+            document.getElementById('questionModal').classList.remove('hidden');
+        }
+
+        function renderAwardButtons(points) {
+            const btnContainer = document.getElementById('awardTeamButtons');
+            btnContainer.innerHTML = '';
+
+            gameState.teams.forEach((team, idx) => {
+                const btn = document.createElement('button');
+                btn.className = `px-4 py-2 bg-gradient-to-r ${team.color} text-white font-bold rounded-xl text-xs md:text-sm shadow hover:brightness-125 transition transform hover:scale-105 flex items-center space-x-1`;
+                btn.innerHTML = `<span>+${points} Pkt:</span> <span>${team.name}</span>`;
+                btn.onclick = () => awardPoints(idx, points);
+                btnContainer.appendChild(btn);
+            });
+        }
+
+        function revealSolution() {
+            sound.playCorrect();
+            document.getElementById('solutionBox').classList.remove('hidden');
+            document.getElementById('awardSection').classList.remove('hidden');
+            document.getElementById('showSolutionBtn').classList.add('hidden');
+            stopTimer();
+        }
+
+        function awardPoints(teamIdx, points) {
+            sound.playCorrect();
+            gameState.teams[teamIdx].score += points;
+            closeQuestionModal();
+            renderScoreboard();
+            checkGameCompletion();
+        }
+
+        function adjustScore(teamIdx, delta) {
+            sound.playClick();
+            gameState.teams[teamIdx].score += delta;
+            renderScoreboard();
+        }
+
+        function markQuestionAsUsed() {
+            if (gameState.currentQ && !gameState.usedQuestions.has(gameState.currentQ.key)) {
+                gameState.usedQuestions.add(gameState.currentQ.key);
+                renderGameBoard();
+                try {
+                    advanceTurn();
+                } catch (e) {
+                    console.error('Fehler beim Weiterschalten der Team-Reihenfolge:', e);
+                }
+            }
+        }
+
+        function closeQuestionModal() {
+            // Fenster IMMER sofort schließen, unabhängig davon, was danach passiert
+            document.getElementById('questionModal').classList.add('hidden');
+            stopTimer();
+            if (gameState.currentQ && (gameState.currentQ.autoUsed || !document.getElementById('solutionBox').classList.contains('hidden'))) {
+                markQuestionAsUsed();
+            }
+        }
+
+        function startTimer() {
+            sound.playClick();
+            resetTimer();
+            document.getElementById('timerContainer').classList.remove('hidden');
+
+            const timerBar = document.getElementById('timerBar');
+            timerBar.style.width = '100%';
+            timerBar.classList.remove('animate-pulse');
+
+            let duration = 30;
+            gameState.timeLeft = duration;
+
+            gameState.timerInterval = setInterval(() => {
+                gameState.timeLeft--;
+                const pct = (gameState.timeLeft / duration) * 100;
+                timerBar.style.width = `${pct}%`;
+
+                if (gameState.timeLeft <= 5 && gameState.timeLeft > 0) {
+                    sound.playTick();
+                }
+
+                if (gameState.timeLeft <= 0) {
+                    stopTimer();
+                    sound.playWrong();
+                    // Zeit abgelaufen: Timer-Balken blinkt, Lösung muss manuell aufgerufen werden
+                    timerBar.classList.add('animate-pulse');
+                }
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (gameState.timerInterval) {
+                clearInterval(gameState.timerInterval);
+                gameState.timerInterval = null;
+            }
+        }
+
+        function resetTimer() {
+            stopTimer();
+            const timerBar = document.getElementById('timerBar');
+            if (timerBar) timerBar.style.width = '100%';
+        }
+
+        function openTeamModal() {
+            sound.playClick();
+            const container = document.getElementById('teamInputs');
+            container.innerHTML = '';
+
+            gameState.teams.forEach((team, idx) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-2";
+                div.innerHTML = `
+                    <input type="text" value="${team.name}" id="teamInput_${idx}" class="flex-grow bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white text-sm font-semibold focus:outline-none focus:border-yellow-400">
+                    ${gameState.teams.length > 2 ? `<button onclick="removeTeamInput(${idx})" class="text-red-400 hover:text-red-300 px-2 font-bold text-lg">✕</button>` : ''}
+                `;
+                container.appendChild(div);
+            });
+
+            document.getElementById('teamModal').classList.remove('hidden');
+        }
+
+        function closeTeamModal() {
+            document.getElementById('teamModal').classList.add('hidden');
+        }
+
+        /* Liest die aktuell im Dialog eingegebenen Namen aus, bevor das Array verändert wird */
+        function syncCurrentTeamInputs() {
+            gameState.teams.forEach((team, idx) => {
+                const input = document.getElementById(`teamInput_${idx}`);
+                if (input && input.value.trim() !== '') {
+                    team.name = input.value.trim();
+                }
+            });
+        }
+
+        function addTeamInput() {
+            if (gameState.teams.length >= 12) return;
+            syncCurrentTeamInputs(); // Bestehende Eingaben sichern
+            const colors = [
+                "from-purple-600 to-indigo-800",
+                "from-cyan-600 to-blue-800",
+                "from-amber-500 to-red-700",
+                "from-teal-600 to-emerald-800",
+                "from-fuchsia-600 to-pink-800",
+                "from-violet-600 to-purple-900",
+                "from-rose-600 to-red-800",
+                "from-lime-600 to-green-800"
+            ];
+            gameState.teams.push({
+                name: `Team ${gameState.teams.length + 1}`,
+                score: 0,
+                color: colors[gameState.teams.length % colors.length]
+            });
+            openTeamModal();
+        }
+
+        function removeTeamInput(idx) {
+            if (gameState.teams.length <= 2) return;
+            syncCurrentTeamInputs(); // Bestehende Eingaben sichern
+            gameState.teams.splice(idx, 1);
+            openTeamModal();
+        }
+
+        function saveTeams() {
+            sound.playClick();
+            syncCurrentTeamInputs();
+            if (gameState.gameStarted) {
+                gameState.gameStarted = false;
+                showToast('Teams geändert – bitte "Start" erneut drücken, um die Reihenfolge neu auszulosen.', 'fa-triangle-exclamation');
+            }
+            renderScoreboard();
+            closeTeamModal();
+        }
+
+        function openTeacherSheet() {
+            sound.playClick();
+            const container = document.getElementById('teacherSheetContent');
+            container.innerHTML = '';
+
+            jeopardyData.forEach((cat) => {
+                const catBox = document.createElement('div');
+                catBox.className = "bg-slate-800/80 border border-slate-700 rounded-2xl p-4";
+
+                let qRows = cat.questions.map(q => `
+                    <div class="py-2 border-b border-slate-700/60 last:border-0 text-sm">
+                        <div class="flex justify-between font-bold text-yellow-400 mb-1">
+                            <span>${q.points} Punkte</span>
+                        </div>
+                        <div class="text-gray-200 mb-1"><b>Frage:</b> ${q.q}</div>
+                        <div class="text-emerald-300"><b>Lösung:</b> ${q.a}</div>
+                    </div>
+                `).join('');
+
+                catBox.innerHTML = `
+                    <h3 class="font-display font-bold text-lg text-purple-300 border-b border-purple-500/30 pb-2 mb-3">
+                        ${cat.category} <span class="text-xs text-gray-400 font-normal">(${cat.description})</span>
+                    </h3>
+                    <div class="space-y-2">${qRows}</div>
+                `;
+                container.appendChild(catBox);
+            });
+
+            document.getElementById('teacherSheetModal').classList.remove('hidden');
+        }
+
+        function closeTeacherSheet() {
+            document.getElementById('teacherSheetModal').classList.add('hidden');
+        }
+
+        function checkGameCompletion() {
+            if (gameState.usedQuestions.size >= (jeopardyData.length * 5)) {
+                setTimeout(showVictory, 800);
+            }
+        }
+
+        function showVictory() {
+            // Find winner team
+            let sorted = [...gameState.teams].sort((a, b) => b.score - a.score);
+            let winner = sorted[0];
+
+            document.getElementById('winnerText').innerHTML = `${winner.name}<br><span class="text-yellow-300 text-3xl">${winner.score} Punkte</span>`;
+            document.getElementById('victoryOverlay').classList.remove('hidden');
+            startFireworks();
+        }
+
+        function closeVictory() {
+            document.getElementById('victoryOverlay').classList.add('hidden');
+        }
+
+        function confirmReset() {
+            sound.playClick();
+            document.getElementById('resetModal').classList.remove('hidden');
+        }
+
+        function closeResetModal() {
+            document.getElementById('resetModal').classList.add('hidden');
+        }
+
+        function executeReset() {
+            sound.playClick();
+            gameState.usedQuestions.clear();
+            gameState.teams.forEach(t => t.score = 0);
+            gameState.gameStarted = false;
+            gameState.turnOrder = [];
+            gameState.turnIndex = 0;
+            setRandomSpecialFields();
+            renderScoreboard();
+            renderGameBoard();
+            closeResetModal();
+            closeVictory();
+        }
+
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(() => {});
+            } else {
+                if (document.exitFullscreen) document.exitFullscreen();
+            }
+        }
+
+        /* Toast Notification Helper (u.a. für "Team ist dran"-Meldungen) */
+        function showToast(msg, icon) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            const iconMap = {
+                'fa-triangle-exclamation': '⚠️',
+                'fa-bullseye': '🎯'
+            };
+            document.getElementById('toastMsg').textContent = msg;
+            document.getElementById('toastIcon').textContent = iconMap[icon] || '🔔';
+
+            toast.classList.remove('translate-y-20', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+
+            clearTimeout(showToast._hideTimer);
+            showToast._hideTimer = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-20', 'opacity-0');
+            }, 2800);
+        }
+
+        /* Simple Canvas Fireworks Animation */
+        function startFireworks() {
+            const canvas = document.getElementById('fireworksCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            let particles = [];
+            for (let i = 0; i < 100; i++) {
+                particles.push({
+                    x: canvas.width / 2,
+                    y: canvas.height / 2,
+                    vx: (Math.random() - 0.5) * 12,
+                    vy: (Math.random() - 0.5) * 12,
+                    color: `hsl(${Math.random() * 360}, 100%, 60%)`,
+                    radius: Math.random() * 4 + 2,
+                    alpha: 1
+                });
+            }
+
+            function animate() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+                particles.forEach((p, idx) => {
+                    p.x += p.vx;
+                    p.y += p.vy;
+                    p.alpha -= 0.015;
+                    ctx.beginPath();
+                    ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = p.color;
+                    ctx.globalAlpha = Math.max(0, p.alpha);
+                    ctx.fill();
+                });
+                particles = particles.filter(p => p.alpha > 0);
+                if (particles.length > 0) {
+                    requestAnimationFrame(animate);
+                }
+            }
+            animate();
+        }
+    </script>
+</body>
+</html>
