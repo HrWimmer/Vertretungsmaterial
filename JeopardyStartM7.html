@@ -59,6 +59,25 @@
             background: #ffcc00;
             border-radius: 4px;
         }
+        /* Echte Bruchdarstellung (Zähler über Nenner mit Trennstrich) */
+        .frac {
+            display: inline-flex;
+            flex-direction: column;
+            vertical-align: middle;
+            text-align: center;
+            line-height: 1.15;
+            margin: 0 0.15em;
+            position: relative;
+            top: 0.05em;
+        }
+        .frac .num,
+        .frac .den {
+            display: block;
+            padding: 0 0.2em;
+        }
+        .frac .num {
+            border-bottom: 1.5px solid currentColor;
+        }
     </style>
 </head>
 <body class="flex flex-col min-h-screen font-sans p-2 md:p-4">
@@ -372,10 +391,20 @@
             document.getElementById('audioText').innerText = sound.muted ? 'Stumm' : 'Ton An';
         }
 
+        /* Wandelt jedes "Zahl/Zahl"-Muster (z.B. aus 3/4) in einen echten,
+           übereinander stehenden Bruch mit Trennstrich um. Wird beim Anzeigen
+           von Fragen, Lösungen und dem Spickzettel angewendet. */
+        function formatMath(str) {
+            if (!str) return str;
+            return str.replace(/(\d+)\/(\d+)/g, '<span class="frac"><span class="num">$1</span><span class="den">$2</span></span>');
+        }
+
         /* Jeopardy Game Data: Einstieg in die 7. Klasse.
-           Alle Aufgaben nutzen bewusst nur Stoff aus Klasse 5/6 (Wiederholung),
-           führen aber inhaltlich auf die fünf LehrplanPLUS-Lernbereiche der 7. Klasse
-           (Terme, Symmetrie/Winkel, Gleichungen/Prozente, Daten, Kongruenz/Konstruktion) hin. */
+           Alle Aufgaben nutzen bewusst nur Stoff aus Klasse 5/6 (Wiederholung).
+           Schwerpunkt liegt auf Bruchrechnung (Addition/Subtraktion, Multiplikation/
+           Division, gemischte Zahlen), da hier bei vielen Schülern zu Schuljahresbeginn
+           noch Übungsbedarf besteht, ergänzt um Rechenwege, Zahlenmuster, Winkel,
+           Prozentrechnen und Känguru-Knobeleien. */
         const jeopardyData = [
             {
                 category: "🧮 Rechenwege & Klammern",
@@ -393,18 +422,18 @@
                     },
                     {
                         points: 300,
-                        q: "Setze für <span class='text-yellow-300'>x = 6</span> in <span class='text-2xl font-mono text-yellow-300'>5 + 2 · x</span> ein und berechne.",
-                        a: "<b>17</b><br><span class='text-sm text-emerald-300'>Rechnung: 2 · 6 = 12, dann 5 + 12 = 17.</span>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>5 · (12 − 4 · 2)</span>",
+                        a: "<b>20</b><br><span class='text-sm text-emerald-300'>Erst in der Klammer Punkt vor Strich: 4·2=8, dann 12−8=4. Zuletzt: 5 · 4 = 20.</span>"
                     },
                     {
                         points: 400,
-                        q: "Ein Quadrat hat die Seitenlänge <span class='text-yellow-300'>a = 7 cm</span>. Berechne den Umfang mit der Formel <span class='text-2xl font-mono text-yellow-300'>U = 4 · a</span>.",
-                        a: "<b>28 cm</b><br><span class='text-sm text-emerald-300'>Rechnung: U = 4 · 7 cm = 28 cm.</span>"
+                        q: "Ein Rechteck hat einen Umfang von 30 cm. Die Länge ist 3 cm größer als die Breite. Wie lang sind Länge und Breite?",
+                        a: "<b>Breite 6 cm, Länge 9 cm</b><br><span class='text-sm text-emerald-300'>Umfang = 2 · (Breite + Länge). Setzt man Breite + Länge = 15 cm (denn 30:2=15) und probiert Zahlen, die sich um 3 unterscheiden und 15 ergeben: 6+9=15. Probe: 2·(6+9)=2·15=30 cm. ✓</span>"
                     },
                     {
                         points: 500,
-                        q: "Für welche Zahl im Kästchen gilt: <span class='text-2xl font-mono text-yellow-300'>4 · (☐ − 3) = 20</span> ?",
-                        a: "<b>☐ = 8</b><br><span class='text-sm text-emerald-300'>Rechnung: ☐−3 = 20:4 = 5, also ☐ = 5+3 = 8.</span>"
+                        q: "Für welche Zahl im Kästchen gilt: <span class='text-2xl font-mono text-yellow-300'>3 · (☐ + 2) − 4 = 17</span> ?",
+                        a: "<b>☐ = 5</b><br><span class='text-sm text-emerald-300'>Rückwärts rechnen: Erst 4 addieren: 3·(☐+2) = 21. Dann durch 3 teilen: ☐+2 = 7. Zuletzt 2 abziehen: ☐ = 5.</span>"
                     }
                 ]
             },
@@ -424,7 +453,7 @@
                     },
                     {
                         points: 300,
-                        q: "Die Quadratzahlen lauten 1, 4, 9, 16, 25, 36, 49, 64, 81, 100, ... Wie groß ist der Unterschied zwischen der 10. und der 9. Quadratzahl?",
+                        q: "Die Quadratzahlen beginnen mit 1, 4, 9, 16, ... (1², 2², 3², 4², ...). Wie groß ist der Unterschied zwischen der 10. und der 9. Quadratzahl?",
                         a: "<b>19</b><br><span class='text-sm text-emerald-300'>10² − 9² = 100 − 81 = 19. (Die Unterschiede benachbarter Quadratzahlen sind übrigens immer die ungeraden Zahlen.)</span>"
                     },
                     {
@@ -434,39 +463,39 @@
                     },
                     {
                         points: 500,
-                        q: "Zahlenmauer mit 4 Steinen unten und Platzhalter: <span class='text-2xl font-mono text-yellow-300'>3, ☐, 4, 2</span>. Die Zahl ganz oben lautet 41. Welche Zahl steht im Kästchen?",
+                        q: "Zahlenmauer mit 4 Steinen unten und Platzhalter: <span class='text-2xl font-mono text-yellow-300'>3, ☐, 4, 2</span>. Wie immer ist jede Zahl darüber die Summe ihrer beiden Nachbarn. Die Zahl ganz oben lautet 41. Welche Zahl steht im Kästchen?",
                         a: "<b>☐ = 8</b><br><span class='text-sm text-emerald-300'>2. Reihe: (3+☐), (☐+4), 6. 3. Reihe: (7+2·☐), (☐+10). Oben: 17+3·☐ = 41 → 3·☐=24 → ☐=8. Probe: 3,8,4,2 → 11,12,6 → 23,18 → 41. ✓</span>"
                     }
                 ]
             },
             {
-                category: "🔷 Spiegeln & Symmetrie",
-                description: "Achsensymmetrie & Symmetrieachsen erkennen",
+                category: "✖️ Brüche multiplizieren & dividieren",
+                description: "Brüche malnehmen, teilen & mit Kehrwert rechnen",
                 questions: [
                     {
                         points: 100,
-                        q: "Wie viele Symmetrieachsen hat ein Quadrat?",
-                        a: "<b>4 Symmetrieachsen</b><br><span class='text-sm text-emerald-300'>Beide Diagonalen sowie die waagrechte und die senkrechte Mittellinie.</span>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>2/3 · 3/5</span>",
+                        a: "<b>2/5</b><br><span class='text-sm text-emerald-300'>Zähler mal Zähler, Nenner mal Nenner: (2·3)/(3·5) = 6/15, gekürzt = 2/5.</span>"
                     },
                     {
                         points: 200,
-                        q: "Ist ein Rechteck (kein Quadrat) achsensymmetrisch? Wie viele Symmetrieachsen hat es?",
-                        a: "<b>Ja, 2 Symmetrieachsen</b>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>4/5 : 2</span>",
+                        a: "<b>2/5</b><br><span class='text-sm text-emerald-300'>Durch eine ganze Zahl teilt man, indem man den Nenner damit multipliziert: 4/(5·2) = 4/10 = 2/5.</span>"
                     },
                     {
                         points: 300,
-                        q: "Ein Punkt P wird an einer Achse gespiegelt. Sein Abstand zur Achse beträgt 4 cm. Wie weit ist der Bildpunkt P' von der Achse entfernt?",
-                        a: "<b>Ebenfalls 4 cm</b><br><span class='text-sm text-emerald-300'>Bildpunkt und Original haben immer denselben Abstand zur Spiegelachse.</span>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>5/6 · 3/10</span>",
+                        a: "<b>1/4</b><br><span class='text-sm text-emerald-300'>(5·3)/(6·10) = 15/60, gekürzt = 1/4.</span>"
                     },
                     {
                         points: 400,
-                        q: "Wie viele Symmetrieachsen hat ein Kreis?",
-                        a: "<b>Unendlich viele</b><br><span class='text-sm text-emerald-300'>Jede Gerade durch den Mittelpunkt ist eine Symmetrieachse.</span>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>3/4 : 1/2</span>",
+                        a: "<b>3/2 = 1 1/2</b><br><span class='text-sm text-emerald-300'>Division durch einen Bruch = Multiplikation mit dem Kehrwert: 3/4 · 2/1 = 6/4 = 3/2 = 1 1/2.</span>"
                     },
                     {
                         points: 500,
-                        q: "Richtig oder falsch: Ein Drachenviereck hat genau eine Symmetrieachse.",
-                        a: "<b>Richtig</b>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>2/3 : 4/9</span>",
+                        a: "<b>3/2 = 1 1/2</b><br><span class='text-sm text-emerald-300'>Mit dem Kehrwert multiplizieren: 2/3 · 9/4 = 18/12, gekürzt = 3/2 = 1 1/2.</span>"
                     }
                 ]
             },
@@ -527,70 +556,70 @@
                     },
                     {
                         points: 500,
-                        q: "Eine Balkenwaage ist im Gleichgewicht. Links liegen ein unbekanntes Gewicht x und ein 3-kg-Gewicht, rechts ein 11-kg-Gewicht. Wie schwer ist x?",
-                        a: "<b>8 kg</b><br><span class='text-sm text-emerald-300'>Rechnung: x + 3 kg = 11 kg → x = 8 kg.</span>"
+                        q: "Eine Balkenwaage ist im Gleichgewicht. Links liegen zwei gleich schwere unbekannte Gewichte (beide x) und ein 3-kg-Gewicht. Rechts liegt nur ein unbekanntes Gewicht (x) und ein 9-kg-Gewicht. Wie schwer ist ein Gewicht x?",
+                        a: "<b>6 kg</b><br><span class='text-sm text-emerald-300'>Auf beiden Seiten steht ein x, das kann man wegnehmen, ohne dass die Waage aus dem Gleichgewicht kommt: x + 3 kg = 9 kg → x = 6 kg. Probe: 2·6+3=15 und 6+9=15. ✓</span>"
                     }
                 ]
             },
             {
-                category: "📊 Daten & Durchschnitt",
-                description: "Häufigkeiten, Mittelwert & Datenreihen",
+                category: "➕ Brüche addieren & subtrahieren",
+                description: "Gleichnamig machen & Brüche geschickt verrechnen",
                 questions: [
                     {
                         points: 100,
-                        q: "Noten einer Kurzarbeit: 2, 3, 2, 4, 4. Wie oft kommt die Note „4“ vor?",
-                        a: "<b>2-mal</b>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>2/5 + 1/5</span>",
+                        a: "<b>3/5</b><br><span class='text-sm text-emerald-300'>Gleicher Nenner: Zähler einfach addieren: 2+1=3.</span>"
                     },
                     {
                         points: 200,
-                        q: "Berechne den Durchschnitt (arithmetisches Mittel) von <span class='text-2xl font-mono text-yellow-300'>4, 6, 8</span>.",
-                        a: "<b>6</b><br><span class='text-sm text-emerald-300'>Rechnung: (4+6+8) : 3 = 18 : 3 = 6.</span>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>3/4 − 1/4</span>",
+                        a: "<b>1/2</b><br><span class='text-sm text-emerald-300'>Gleicher Nenner: 3−1=2, also 2/4, gekürzt = 1/2.</span>"
                     },
                     {
                         points: 300,
-                        q: "Würfelwürfe: 3, 5, 2, 6, 1, 4, 3, 5, 6, 2. Wie oft wurde eine gerade Zahl gewürfelt?",
-                        a: "<b>5-mal</b><br><span class='text-sm text-emerald-300'>Gerade Zahlen: 2, 6, 4, 6, 2.</span>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>1/3 + 1/6</span>",
+                        a: "<b>1/2</b><br><span class='text-sm text-emerald-300'>Hauptnenner 6: 1/3 = 2/6. Dann 2/6 + 1/6 = 3/6 = 1/2.</span>"
                     },
                     {
                         points: 400,
-                        q: "Wochentemperaturen: 18°C, 20°C, 17°C, 22°C, 19°C. Wie groß ist der Unterschied zwischen der höchsten und der niedrigsten Temperatur?",
-                        a: "<b>5°C</b><br><span class='text-sm text-emerald-300'>Rechnung: 22°C − 17°C = 5°C.</span>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>5/6 − 1/4</span>",
+                        a: "<b>7/12</b><br><span class='text-sm text-emerald-300'>Hauptnenner 12: 5/6 = 10/12, 1/4 = 3/12. Dann 10/12 − 3/12 = 7/12.</span>"
                     },
                     {
                         points: 500,
-                        q: "Schuhgrößen einer Klasse: 36, 38, 37, 40, 39, 38, 37, 38. Welche Schuhgröße kommt am häufigsten vor?",
-                        a: "<b>38</b><br><span class='text-sm text-emerald-300'>Sie kommt 3-mal vor, alle anderen Größen seltener.</span>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>2/3 + 3/4 − 1/6</span>",
+                        a: "<b>5/4 = 1 1/4</b><br><span class='text-sm text-emerald-300'>Hauptnenner 12: 2/3=8/12, 3/4=9/12, 1/6=2/12. Dann 8/12+9/12−2/12 = 15/12 = 5/4 = 1 1/4.</span>"
                     }
                 ]
             },
             {
-                category: "🔺 Dreiecke & Zirkel",
-                description: "Kreise, Zirkel & erste Konstruktionsschritte",
+                category: "🔀 Gemischte Brüche & Umwandeln",
+                description: "Unechte Brüche, gemischte Zahlen, Kürzen & Rechnen",
                 questions: [
                     {
                         points: 100,
-                        q: "Der Radius eines Kreises beträgt 5 cm. Wie groß ist sein Durchmesser?",
-                        a: "<b>10 cm</b><br><span class='text-sm text-emerald-300'>Der Durchmesser ist immer doppelt so lang wie der Radius: d = 2 · r.</span>"
+                        q: "Wandle den gemischten Bruch <span class='text-2xl font-mono text-yellow-300'>2 1/3</span> in einen unechten Bruch um.",
+                        a: "<b>7/3</b><br><span class='text-sm text-emerald-300'>Ganze mal Nenner plus Zähler: 2·3+1=7, Nenner bleibt 3: 7/3.</span>"
                     },
                     {
                         points: 200,
-                        q: "Der Durchmesser eines Kreises ist 18 cm lang. Auf welchen Wert musst du die Zirkelspannweite (den Radius) einstellen, um diesen Kreis zu zeichnen?",
-                        a: "<b>9 cm</b><br><span class='text-sm text-emerald-300'>Der Radius ist immer halb so lang wie der Durchmesser: r = d : 2.</span>"
+                        q: "Wandle den unechten Bruch <span class='text-2xl font-mono text-yellow-300'>11/4</span> in eine gemischte Zahl um.",
+                        a: "<b>2 3/4</b><br><span class='text-sm text-emerald-300'>11 : 4 = 2 Rest 3, also 2 ganze und 3/4.</span>"
                     },
                     {
                         points: 300,
-                        q: "Was zeichnet man mit einem Zirkel: Geraden, Kreise oder Winkel?",
-                        a: "<b>Kreise (Kreisbögen)</b>"
+                        q: "Kürze den Bruch <span class='text-2xl font-mono text-yellow-300'>18/24</span> so weit wie möglich.",
+                        a: "<b>3/4</b><br><span class='text-sm text-emerald-300'>Zähler und Nenner durch den größten gemeinsamen Teiler 6 teilen: 18:6=3, 24:6=4.</span>"
                     },
                     {
                         points: 400,
-                        q: "Du willst mit dem Zirkel eine Strecke von 6 cm übertragen. Was stellst du am Zirkel zuerst ein?",
-                        a: "<b>Die Zirkelspannweite (den Radius) auf 6 cm</b>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>3 1/3 − 1 3/4</span>",
+                        a: "<b>1 7/12</b><br><span class='text-sm text-emerald-300'>Als unechte Brüche mit Hauptnenner 12: 3 1/3 = 40/12, 1 3/4 = 21/12. Dann 40/12 − 21/12 = 19/12 = 1 7/12.</span>"
                     },
                     {
                         points: 500,
-                        q: "Du sollst ein Dreieck mit den Seiten 4 cm, 4 cm und 6 cm zeichnen. Welche Werkzeuge brauchst du und was zeichnest du zuerst?",
-                        a: "<b>Lineal und Zirkel</b><br><span class='text-sm text-emerald-300'>Zuerst die 6-cm-Grundlinie zeichnen, dann von beiden Endpunkten je einen Kreisbogen mit 4 cm Radius schlagen – der Schnittpunkt ist die dritte Ecke.</span>"
+                        q: "Berechne: <span class='text-2xl font-mono text-yellow-300'>2 1/2 · 1 1/3</span>",
+                        a: "<b>3 1/3</b><br><span class='text-sm text-emerald-300'>Achtung, Falle: Man darf NICHT einfach Ganze mit Ganzen und Brüche mit Brüchen multiplizieren (2·1 und 1/2·1/3 getrennt wäre falsch)! Erst in unechte Brüche umwandeln: 2 1/2 = 5/2, 1 1/3 = 4/3. Dann ganz normal multiplizieren: 5/2 · 4/3 = 20/6 = 10/3 = 3 1/3.</span>"
                     }
                 ]
             },
@@ -610,13 +639,13 @@
                     },
                     {
                         points: 300,
-                        q: "Fünf Freunde teilen sich 2 Pizzen gerecht auf. Kurz bevor es losgeht, kommt ein sechster Freund dazu und bringt eine dritte Pizza mit. Jetzt werden alle 3 Pizzen unter allen 6 Freunden gerecht aufgeteilt. Welchen Bruchteil einer Pizza bekommt am Ende jeder?",
-                        a: "<b>1/2 einer Pizza</b><br><span class='text-sm text-emerald-300'>Rechnung: 3 Pizzen : 6 Personen = 3/6 = 1/2.</span>"
+                        q: "Auf einem Schulfest werden mehrere Kuchen gleichmäßig unter den Kindern einer Klasse aufgeteilt. Insgesamt standen 5 Kuchen bereit, und am Ende hat jedes Kind genau 5/8 eines Kuchens bekommen. Wie viele Kinder waren in der Klasse?",
+                        a: "<b>8 Kinder</b><br><span class='text-sm text-emerald-300'>Rechnung: 5 : 5/8 = 5 · 8/5 = 8. (Anders gedacht: 5 Kuchen ergeben 5 · 8 = 40 Achtel-Stücke, jedes Kind bekommt 5 Achtel-Stücke: 40 : 5 = 8 Kinder.)</span>"
                     },
                     {
                         points: 400,
-                        q: "Eine digitale Uhr zeigt 10:23 Uhr an. Wie viele Minuten vergehen bis 12:34 Uhr?",
-                        a: "<b>131 Minuten</b><br><span class='text-sm text-emerald-300'>Von 10:23 bis 12:23 sind es 120 Minuten, plus 11 Minuten bis 12:34 = 131 Minuten.</span>"
+                        q: "Tim möchte pünktlich um 8:15 Uhr in der Schule sein. Er braucht 12 Minuten zum Anziehen, danach 8 Minuten zum Frühstücken und schließlich 20 Minuten für den Schulweg – und das alles der Reihe nach. Um wie viel Uhr muss er spätestens aufstehen?",
+                        a: "<b>7:35 Uhr</b><br><span class='text-sm text-emerald-300'>Gesamtzeit: 12+8+20 = 40 Minuten. Rückwärts von 8:15 Uhr: 8:15 Uhr − 40 Minuten = 7:35 Uhr.</span>"
                     },
                     {
                         points: 500,
@@ -711,9 +740,10 @@
                 const j = Math.floor(Math.random() * (i + 1));
                 [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
             }
-            // 4 Joker-Felder (doppelte Punkte) + 2 Sofortpunkte-Felder
+            // 4 Joker-Felder (doppelte Punkte für eine richtig beantwortete Frage)
+            // Keine Sofortpunkte-Felder: Punkte gibt es nur nach einer beantworteten Frage
             gameState.dailyDoubleCoords = new Set(candidates.slice(0, 4));
-            gameState.instantPointsCoords = new Set(candidates.slice(4, 6));
+            gameState.instantPointsCoords = new Set();
         }
 
         function renderGameBoard() {
@@ -804,8 +834,8 @@
 
             document.getElementById('modalCategory').innerText = catData.category;
             document.getElementById('modalPoints').innerText = `${actualPoints} Punkte`;
-            document.getElementById('questionText').innerHTML = qData.q;
-            document.getElementById('solutionText').innerHTML = qData.a;
+            document.getElementById('questionText').innerHTML = formatMath(qData.q);
+            document.getElementById('solutionText').innerHTML = formatMath(qData.a);
 
             const turnBadge = document.getElementById('currentTurnBadge');
             const currentTurnTeam = (gameState.gameStarted && gameState.turnOrder.length > 0)
@@ -1042,8 +1072,8 @@
                         <div class="flex justify-between font-bold text-yellow-400 mb-1">
                             <span>${q.points} Punkte</span>
                         </div>
-                        <div class="text-gray-200 mb-1"><b>Frage:</b> ${q.q}</div>
-                        <div class="text-emerald-300"><b>Lösung:</b> ${q.a}</div>
+                        <div class="text-gray-200 mb-1"><b>Frage:</b> ${formatMath(q.q)}</div>
+                        <div class="text-emerald-300"><b>Lösung:</b> ${formatMath(q.a)}</div>
                     </div>
                 `).join('');
 
